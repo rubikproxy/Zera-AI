@@ -12,7 +12,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { CornerDownLeft, Loader, Mic, Paperclip, Sparkles, Sun, User as UserIcon } from 'lucide-react';
+import { CornerDownLeft, Loader, Mic, Paperclip, Sparkles, Sun } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { EmergencyDialog } from './emergency-dialog';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -215,13 +215,6 @@ export function Chat() {
                   >
                     {message.content}
                   </div>
-                   {message.role === 'user' && (
-                    <Avatar>
-                        <AvatarFallback>
-                            <UserIcon />
-                        </AvatarFallback>
-                    </Avatar>
-                  )}
                 </div>
               );
             })}
