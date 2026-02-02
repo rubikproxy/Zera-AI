@@ -216,6 +216,12 @@ export function Chat({ language }: ChatProps) {
   const [screeningAnswers, setScreeningAnswers] = useState<number[]>([]);
   const [shownTips, setShownTips] = useState<string[]>([]);
 
+  // State for Daily Check-in
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [checkInQuestions, setCheckInQuestions] = useState<string[]>([]);
+  const [checkInStep, setCheckInStep] = useState(0);
+  const [checkInAnswers, setCheckInAnswers] = useState<string[]>([]);
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -263,8 +269,89 @@ export function Chat({ language }: ChatProps) {
     }
   }, [messages]);
 
+  const handleCheckInResponse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userAnswer = input;
+    const newAnswers = [...checkInAnswers, userAnswer];
+    setCheckInAnswers(newAnswers);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), role: 'user', content: userAnswer },
+    ]);
+    setInput('');
+
+    const nextStep = checkInStep + 1;
+
+    if (nextStep < checkInQuestions.length) {
+      setCheckInStep(nextStep);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-checkin-q-${nextStep}`,
+          role: 'assistant',
+          content: checkInQuestions[nextStep],
+        },
+      ]);
+    } else {
+      setIsCheckingIn(false);
+      setCheckInQuestions([]);
+      setCheckInStep(0);
+      setIsLoading(true);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-checkin-end`,
+          role: 'system',
+          content: 'Daily check-in complete. Analyzing your responses...',
+        },
+      ]);
+
+      try {
+        const checkinSummary = checkInQuestions
+          .map((q, i) => `Q: ${q}\nA: ${newAnswers[i]}`)
+          .join('\n\n');
+
+        const empatheticResponse = await getEmpatheticResponse({
+          userInput: 'I just finished my daily check-in.',
+          context: `Here are my answers to the daily check-in questions:\n${checkinSummary}`,
+          language: language,
+        });
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: empatheticResponse.response,
+          },
+        ]);
+      } catch (error) {
+        console.error('Error getting check-in summary:', error);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-error`,
+            role: 'assistant',
+            content:
+              'Thank you for completing the check-in! I have recorded your responses.',
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isCheckingIn) {
+      await handleCheckInResponse(e);
+      return;
+    }
     if (!input.trim() || isLoading || isScreening) return;
 
     const userInput = input;
@@ -489,14 +576,32 @@ export function Chat({ language }: ChatProps) {
         previousResponses,
         currentDate: new Date().toISOString(),
       });
+      
+      if (checkin.questions && checkin.questions.length > 0) {
+        setCheckInQuestions(checkin.questions);
+        setCheckInAnswers([]);
+        setCheckInStep(0);
+        setIsCheckingIn(true);
+        // Ask the first question
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-checkin-q-0`,
+            role: 'assistant',
+            content: checkin.questions[0],
+          },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-checkin-no-q`,
+            role: 'assistant',
+            content: "I don't have any check-in questions for you right now, but I'm here if you need to talk!",
+          },
+        ]);
+      }
 
-      const questionMessages: Message[] = checkin.questions.map((q, i) => ({
-        id: `${Date.now()}-q-${i}`,
-        role: 'assistant',
-        content: q,
-      }));
-
-      setMessages((prev) => [...prev, ...questionMessages]);
     } catch (error) {
       console.error(error);
       toast({
@@ -658,6 +763,11 @@ export function Chat({ language }: ChatProps) {
     }
   };
 
+  const getPlaceholderText = () => {
+    if (isScreening) return "Please select an option above.";
+    if (isCheckingIn) return "Type your answer for the check-in...";
+    return "Type your message...";
+  }
 
   return (
     <>
@@ -669,7 +779,7 @@ export function Chat({ language }: ChatProps) {
               variant="outline"
               size="sm"
               onClick={handleGetHealthTip}
-              disabled={isLoading || isScreening}
+              disabled={isLoading || isScreening || isCheckingIn}
             >
               <ClipboardCheck className="mr-2 h-4 w-4" /> Get Health Tip
             </Button>
@@ -677,7 +787,7 @@ export function Chat({ language }: ChatProps) {
               variant="outline"
               size="sm"
               onClick={handleStartScreening}
-              disabled={isLoading || isScreening}
+              disabled={isLoading || isScreening || isCheckingIn}
             >
               <HeartPulse className="mr-2 h-4 w-4" /> Mental Health Screening
             </Button>
@@ -685,7 +795,7 @@ export function Chat({ language }: ChatProps) {
               variant="outline"
               size="sm"
               onClick={handleDailyCheckIn}
-              disabled={isLoading || isScreening}
+              disabled={isLoading || isScreening || isCheckingIn}
             >
               <Sun className="mr-2 h-4 w-4" /> Daily Check-in
             </Button>
@@ -693,7 +803,7 @@ export function Chat({ language }: ChatProps) {
               variant="outline"
               size="sm"
               onClick={handleGetAdvice}
-              disabled={isLoading || isScreening}
+              disabled={isLoading || isScreening || isCheckingIn}
             >
               <Sparkles className="mr-2 h-4 w-4" /> Get Advice
             </Button>
@@ -739,7 +849,7 @@ export function Chat({ language }: ChatProps) {
                   </div>
                 );
               })}
-              {isLoading && !isScreening && (
+              {isLoading && !isScreening && !isCheckingIn && (
                 <div className="flex items-start gap-4">
                   <Avatar className="border-2 border-primary">
                     <AvatarFallback>AI</AvatarFallback>
@@ -759,7 +869,7 @@ export function Chat({ language }: ChatProps) {
             onChange={handleFileChange}
             className="hidden"
             accept="image/*"
-            disabled={isLoading || isScreening}
+            disabled={isLoading || isScreening || isCheckingIn}
           />
           <form
             onSubmit={handleSendMessage}
@@ -768,7 +878,7 @@ export function Chat({ language }: ChatProps) {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={isScreening ? "Please select an option above." : "Type your message..."}
+              placeholder={getPlaceholderText()}
               className="flex-1 resize-none"
               rows={1}
               onKeyDown={(e) => {
@@ -777,7 +887,7 @@ export function Chat({ language }: ChatProps) {
                   handleSendMessage(e as any);
                 }
               }}
-              disabled={isLoading || isScreening}
+              disabled={isLoading || isScreening || (isCheckingIn && isLoading)}
             />
             <Button
               type="submit"
@@ -791,7 +901,7 @@ export function Chat({ language }: ChatProps) {
               type="button"
               variant="outline"
               size="icon"
-              disabled={isLoading || isScreening}
+              disabled={isLoading || isScreening || isCheckingIn}
             >
               <Mic className="h-4 w-4" />
               <span className="sr-only">Use microphone</span>
@@ -800,7 +910,7 @@ export function Chat({ language }: ChatProps) {
               type="button"
               variant="outline"
               size="icon"
-              disabled={isLoading || isScreening}
+              disabled={isLoading || isScreening || isCheckingIn}
               onClick={handleAttachmentClick}
             >
               <Paperclip className="h-4 w-4" />
