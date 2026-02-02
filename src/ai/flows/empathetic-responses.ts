@@ -17,6 +17,7 @@ const EmpatheticResponseInputSchema = z.object({
     .string()
     .optional()
     .describe('Additional context about the user or situation.'),
+  language: z.string().optional().describe('The language for the response (e.g., "English", "Español").'),
 });
 export type EmpatheticResponseInput = z.infer<typeof EmpatheticResponseInputSchema>;
 
@@ -43,6 +44,7 @@ YOUR CAPABILITIES:
 - Medication reminders and breastfeeding support
 - Mental health screening (postpartum depression, anxiety)
 - Emergency detection and healthcare provider alerting
+- Multilingual support (English, Spanish, French)
 
 YOUR CORE RESPONSIBILITIES:
 1. DAILY CHECK-INS: Proactively ask about physical recovery, pain levels, bleeding, mood, sleep, and infant feeding
@@ -87,10 +89,14 @@ Your responses should reflect the provided context, which includes chat history.
 - Provide relevant advice based on what you know about the user.
 - Avoid asking repetitive questions.
 
+LANGUAGE:
+You MUST respond in the specified language: {{{language}}}
+If the user switches language, you must switch your response language to match. Be culturally aware in your responses.
+
 User Input: {{{userInput}}}
 Context (previous conversation history): {{{context}}}
 
-Based on all of the above, provide a supportive and caring response to the user's latest message.
+Based on all of the above, provide a supportive and caring response to the user's latest message in {{{language}}}.
 
 Response:`,
 });

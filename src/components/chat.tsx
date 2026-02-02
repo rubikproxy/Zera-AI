@@ -49,12 +49,9 @@ interface Message {
   content: React.ReactNode;
 }
 
-const initialMessage: Message = {
-  id: 'init',
-  role: 'assistant',
-  content:
-    "Hello! I'm Zera, your personal postpartum support assistant. How are you feeling today? You can ask me for advice, tell me about your symptoms, or start your daily check-in.",
-};
+interface ChatProps {
+  language: string;
+}
 
 const WoundAnalysisResult = ({
   analysis,
@@ -206,8 +203,8 @@ const HealthTipResult = ({ result }: { result: HealthTipOutput }) => {
 };
 
 
-export function Chat() {
-  const [messages, setMessages] = useState<Message[]>([initialMessage]);
+export function Chat({ language }: ChatProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEmergency, setIsEmergency] = useState(false);
@@ -222,6 +219,40 @@ export function Chat() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Send initial message when component mounts
+    async function sendInitialMessage() {
+      setIsLoading(true);
+      try {
+        const empatheticResponse = await getEmpatheticResponse({
+          userInput: 'Hello, this is my first time here.',
+          context: 'This is the very first message from a new user.',
+          language: language,
+        });
+        setMessages([
+          {
+            id: 'init',
+            role: 'assistant',
+            content: empatheticResponse.response,
+          },
+        ]);
+      } catch (error) {
+        console.error(error);
+        setMessages([
+          {
+            id: 'init-error',
+            role: 'assistant',
+            content: "Hello! I'm Zera, your personal postpartum support assistant. How are you feeling today?",
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    sendInitialMessage();
+  }, [language]);
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -283,6 +314,7 @@ export function Chat() {
           const empatheticResponse = await getEmpatheticResponse({
             userInput: userInput,
             context: 'User is a new mother in the postpartum period.',
+            language: language,
           });
           setMessages((prev) => [
             ...prev,
