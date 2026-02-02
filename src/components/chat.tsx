@@ -8,6 +8,8 @@ import {
   getSymptomUnderstanding,
   getWoundAnalysis,
   getEPDSAssessment,
+  getBreastfeedingSupportAction,
+  getHealthTipAction,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +23,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
+  Baby,
+  ClipboardCheck,
   CornerDownLeft,
   Loader,
   Mic,
@@ -36,6 +40,8 @@ import { EmergencyDialog } from './emergency-dialog';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import type { WoundAnalysisOutput } from '@/ai/flows/wound-analysis';
 import { epdsQuestions, type EpdsQuestion } from '@/lib/epds-questions';
+import type { BreastfeedingSupportOutput } from '@/ai/flows/breastfeeding-support';
+import type { HealthTipOutput } from '@/ai/flows/health-tips';
 
 interface Message {
   id: string;
@@ -156,6 +162,50 @@ const EpdsQuestionDisplay = ({
   );
 };
 
+const BreastfeedingSupportResult = ({ result }: { result: BreastfeedingSupportOutput }) => {
+  return (
+    <div className="space-y-3">
+      <h3 className="font-headline text-lg font-semibold flex items-center gap-2">
+        <Baby className="text-primary h-5 w-5" /> Breastfeeding Support
+      </h3>
+      <div className="border-t border-border pt-2 space-y-3">
+        <div>
+          <p className="font-semibold">Assessment:</p>
+          <p className="text-sm">{result.assessment}</p>
+        </div>
+        <div>
+          <p className="font-semibold">Immediate Relief:</p>
+          <ul className="list-disc list-inside pl-2 text-sm space-y-1">
+            {result.immediateRelief.map((tip, i) => <li key={i}>{tip}</li>)}
+          </ul>
+        </div>
+        <div>
+          <p className="font-semibold">Long-Term Solutions:</p>
+           <ul className="list-disc list-inside pl-2 text-sm space-y-1">
+            {result.longTermSolutions.map((tip, i) => <li key={i}>{tip}</li>)}
+          </ul>
+        </div>
+        <div className="p-3 rounded-lg bg-accent/50 border border-accent">
+          <p className="font-semibold text-accent-foreground">When to Call a Provider:</p>
+          <p className="text-sm text-accent-foreground/80">{result.whenToCallProvider}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const HealthTipResult = ({ result }: { result: HealthTipOutput }) => {
+  return (
+    <div className="space-y-2 rounded-lg border border-accent bg-accent/20 p-4">
+      <h3 className="font-headline text-lg font-semibold flex items-center gap-2">
+        <ClipboardCheck className="text-primary" /> {result.category} Tip
+      </h3>
+      <p>{result.tip}</p>
+    </div>
+  );
+};
+
+
 export function Chat() {
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [input, setInput] = useState('');
@@ -167,6 +217,7 @@ export function Chat() {
   const [isScreening, setIsScreening] = useState(false);
   const [screeningQuestionIndex, setScreeningQuestionIndex] = useState(0);
   const [screeningAnswers, setScreeningAnswers] = useState<number[]>([]);
+  const [shownTips, setShownTips] = useState<string[]>([]);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -194,39 +245,54 @@ export function Chat() {
     setIsLoading(true);
 
     try {
-      const understanding = await getSymptomUnderstanding({
-        symptomsDescription: userInput,
-      });
+      const breastfeedingKeywords = ['breastfeeding', 'latch', 'nipple', 'sore nipples', 'feeding the baby', 'mastitis', 'engorgement'];
+      const isBreastfeedingQuery = breastfeedingKeywords.some(keyword => userInput.toLowerCase().includes(keyword));
 
-      if (understanding.urgencyLevel === 'high') {
-        const escalation = await getEmergencyEscalation({
-          symptoms: userInput,
-          patientId: 'user-123',
-          timestamp: new Date().toISOString(),
-        });
-        setEscalationMessage(escalation.escalationMessage);
-        setIsEmergency(true);
-        setMessages((prev) => [
+      if (isBreastfeedingQuery) {
+        const result = await getBreastfeedingSupportAction({ problemDescription: userInput });
+        setMessages(prev => [
           ...prev,
           {
-            id: `${Date.now()}-urgency`,
-            role: 'system',
-            content: 'Urgency detected. Displaying alert.',
-          },
+            id: `${Date.now()}-breastfeeding`,
+            role: 'assistant',
+            content: <BreastfeedingSupportResult result={result} />,
+          }
         ]);
       } else {
-        const empatheticResponse = await getEmpatheticResponse({
-          userInput: userInput,
-          context: 'User is a new mother in the postpartum period.',
+        const understanding = await getSymptomUnderstanding({
+          symptomsDescription: userInput,
         });
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            role: 'assistant',
-            content: empatheticResponse.response,
-          },
-        ]);
+
+        if (understanding.urgencyLevel === 'high') {
+          const escalation = await getEmergencyEscalation({
+            symptoms: userInput,
+            patientId: 'user-123',
+            timestamp: new Date().toISOString(),
+          });
+          setEscalationMessage(escalation.escalationMessage);
+          setIsEmergency(true);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `${Date.now()}-urgency`,
+              role: 'system',
+              content: 'Urgency detected. Displaying alert.',
+            },
+          ]);
+        } else {
+          const empatheticResponse = await getEmpatheticResponse({
+            userInput: userInput,
+            context: 'User is a new mother in the postpartum period.',
+          });
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              role: 'assistant',
+              content: empatheticResponse.response,
+            },
+          ]);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -526,12 +592,55 @@ export function Chat() {
     }
   };
 
+  const handleGetHealthTip = async () => {
+    setIsLoading(true);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `${Date.now()}-tip-req`,
+        role: 'system',
+        content: 'Fetching a health tip...',
+      },
+    ]);
+
+    try {
+      const result = await getHealthTipAction({ previousTips: shownTips, daysPostpartum: 14 });
+      setShownTips(prev => [...prev, result.tip]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: <HealthTipResult result={result} />,
+        },
+      ]);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Error getting tip',
+        description: 'Could not fetch a health tip. Please try again later.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   return (
     <>
       <Card className="flex h-[calc(100vh-7rem-2rem)] flex-col">
         <CardHeader className="flex flex-row items-center justify-between border-b">
           <h2 className="font-headline text-xl">Your Support Chat</h2>
           <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGetHealthTip}
+              disabled={isLoading || isScreening}
+            >
+              <ClipboardCheck className="mr-2 h-4 w-4" /> Get Health Tip
+            </Button>
             <Button
               variant="outline"
               size="sm"

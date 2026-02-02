@@ -14,6 +14,10 @@ import { analyzeWound } from '@/ai/flows/wound-analysis';
 import type { WoundAnalysisInput } from '@/ai/flows/wound-analysis';
 import { getEpdsAssessment } from '@/ai/flows/mental-health-screening';
 import type { EPDSScoringInput } from '@/ai/flows/mental-health-screening';
+import { getBreastfeedingSupport } from '@/ai/flows/breastfeeding-support';
+import type { BreastfeedingSupportInput } from '@/ai/flows/breastfeeding-support';
+import { getHealthTip } from '@/ai/flows/health-tips';
+import type { HealthTipInput } from '@/ai/flows/health-tips';
 
 
 export async function getDailyCheckIn(input: DailyCheckInInput) {
@@ -42,4 +46,12 @@ export async function getWoundAnalysis(input: WoundAnalysisInput) {
 
 export async function getEPDSAssessment(input: EPDSScoringInput) {
     return await getEpdsAssessment(input);
+}
+
+export async function getBreastfeedingSupportAction(input: BreastfeedingSupportInput) {
+    return await getBreastfeedingSupport(input);
+}
+
+export async function getHealthTipAction(input: HealthTipInput) {
+    return await getHealthTip(input);
 }
