@@ -1,0 +1,32 @@
+'use server';
+
+import { dailyCheckIn } from '@/ai/flows/daily-check-in-questions';
+import type { DailyCheckInInput } from '@/ai/flows/daily-check-in-questions';
+import { emergencyEscalation } from '@/ai/flows/emergency-escalation';
+import type { EmergencyEscalationInput } from '@/ai/flows/emergency-escalation';
+import { generateEmpatheticResponse } from '@/ai/flows/empathetic-responses';
+import type { EmpatheticResponseInput } from '@/ai/flows/empathetic-responses';
+import { personalizedAdvice } from '@/ai/flows/personalized-advice';
+import type { PersonalizedAdviceInput } from '@/ai/flows/personalized-advice';
+import { understandSymptoms } from '@/ai/flows/symptom-understanding';
+import type { UnderstandSymptomsInput } from '@/ai/flows/symptom-understanding';
+
+export async function getDailyCheckIn(input: DailyCheckInInput) {
+  return await dailyCheckIn(input);
+}
+
+export async function getSymptomUnderstanding(input: UnderstandSymptomsInput) {
+  return await understandSymptoms(input);
+}
+
+export async function getEmpatheticResponse(input: EmpatheticResponseInput) {
+  return await generateEmpatheticResponse(input);
+}
+
+export async function getEmergencyEscalation(input: EmergencyEscalationInput) {
+  return await emergencyEscalation(input);
+}
+
+export async function getPersonalizedAdvice(input: PersonalizedAdviceInput) {
+  return await personalizedAdvice(input);
+}

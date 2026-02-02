@@ -1,0 +1,58 @@
+'use server';
+/**
+ * @fileOverview This file contains the personalized advice flow, which provides tailored advice to new mothers on recovery progress, nutrition, exercise, and mental well-being.
+ *
+ * - personalizedAdvice - A function that takes input related to a mother's health and provides personalized advice.
+ * - PersonalizedAdviceInput - The input type for the personalizedAdvice function.
+ * - PersonalizedAdviceOutput - The return type for the personalizedAdvice function.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+
+const PersonalizedAdviceInputSchema = z.object({
+  healthData: z.string().describe('A summary of the mother’s current physical and mental health data, including symptoms, vital signs, and mood.'),
+  recoveryProgress: z.string().describe('Description of the mother’s recovery progress.'),
+  nutritionPreferences: z.string().optional().describe('The mother’s nutrition preferences, if available.'),
+  exerciseLevel: z.string().optional().describe('The mother’s current exercise level, if available.'),
+  mentalWellbeing: z.string().describe('Information about the mother’s mental and emotional wellbeing.'),
+});
+export type PersonalizedAdviceInput = z.infer<typeof PersonalizedAdviceInputSchema>;
+
+const PersonalizedAdviceOutputSchema = z.object({
+  advice: z.string().describe('Tailored advice on recovery progress, nutrition, exercise, and mental well-being.'),
+});
+export type PersonalizedAdviceOutput = z.infer<typeof PersonalizedAdviceOutputSchema>;
+
+export async function personalizedAdvice(input: PersonalizedAdviceInput): Promise<PersonalizedAdviceOutput> {
+  return personalizedAdviceFlow(input);
+}
+
+const prompt = ai.definePrompt({
+  name: 'personalizedAdvicePrompt',
+  input: {schema: PersonalizedAdviceInputSchema},
+  output: {schema: PersonalizedAdviceOutputSchema},
+  prompt: `You are a helpful AI assistant that provides personalized advice to new mothers during the postpartum period.
+  Based on the following information, offer tailored advice on recovery progress, nutrition, exercise, and mental well-being.
+
+  Health Data: {{{healthData}}}
+  Recovery Progress: {{{recoveryProgress}}}
+  Nutrition Preferences: {{{nutritionPreferences}}}
+  Exercise Level: {{{exerciseLevel}}}
+  Mental Wellbeing: {{{mentalWellbeing}}}
+
+  Provide actionable and supportive advice to help the mother improve her overall health.
+`,
+});
+
+const personalizedAdviceFlow = ai.defineFlow(
+  {
+    name: 'personalizedAdviceFlow',
+    inputSchema: PersonalizedAdviceInputSchema,
+    outputSchema: PersonalizedAdviceOutputSchema,
+  },
+  async input => {
+    const {output} = await prompt(input);
+    return output!;
+  }
+);

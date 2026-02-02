@@ -1,0 +1,284 @@
+'use client';
+
+import {
+  getDailyCheckIn,
+  getEmpatheticResponse,
+  getEmergencyEscalation,
+  getPersonalizedAdvice,
+  getSymptomUnderstanding,
+} from '@/app/actions';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+import { CornerDownLeft, Loader, Mic, Paperclip, Sparkles, Sun, User as UserIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { EmergencyDialog } from './emergency-dialog';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { useToast } from '@/hooks/use-toast';
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: React.ReactNode;
+}
+
+const initialMessage: Message = {
+    id: 'init',
+    role: 'assistant',
+    content: "Hello! I'm MomLink, your personal postpartum support assistant. How are you feeling today? You can ask me for advice, tell me about your symptoms, or start your daily check-in."
+};
+
+export function Chat() {
+  const [messages, setMessages] = useState<Message[]>([initialMessage]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isEmergency, setIsEmergency] = useState(false);
+  const [escalationMessage, setEscalationMessage] = useState('');
+
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTo({
+        top: scrollAreaRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [messages]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userInput = input;
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), role: 'user', content: userInput },
+    ]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const understanding = await getSymptomUnderstanding({
+        symptomsDescription: userInput,
+      });
+
+      if (understanding.urgencyLevel === 'high') {
+        const escalation = await getEmergencyEscalation({
+          symptoms: userInput,
+          patientId: 'user-123',
+          timestamp: new Date().toISOString(),
+        });
+        setEscalationMessage(escalation.escalationMessage);
+        setIsEmergency(true);
+        setMessages((prev) => [
+          ...prev,
+          { id: `${Date.now()}-urgency`, role: 'system', content: 'Urgency detected. Displaying alert.' },
+        ]);
+      } else {
+        const empatheticResponse = await getEmpatheticResponse({
+          userInput: userInput,
+          context: 'User is a new mother in the postpartum period.',
+        });
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now().toString(), role: 'assistant', content: empatheticResponse.response },
+        ]);
+      }
+    } catch (error) {
+      console.error(error);
+      setMessages((prev) => [
+        ...prev,
+        { id: `${Date.now()}-error`, role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGetAdvice = async () => {
+    setIsLoading(true);
+    setMessages((prev) => [
+        ...prev,
+        { id: `${Date.now()}-advice-req`, role: 'system', content: "Requesting personalized advice..." },
+    ]);
+
+    try {
+        const chatHistory = messages.map(m => `${m.role}: ${m.content}`).join('\n');
+        const advice = await getPersonalizedAdvice({
+            healthData: 'Simulated data: Resting HR 72, 7h sleep.',
+            recoveryProgress: 'User is 4 weeks postpartum.',
+            mentalWellbeing: chatHistory,
+        });
+        setMessages((prev) => [
+            ...prev,
+            { id: Date.now().toString(), role: 'assistant', content: (
+                <div className="space-y-2 rounded-lg border border-accent bg-accent/20 p-4">
+                    <h3 className="font-headline text-lg font-semibold flex items-center gap-2"><Sparkles className="text-primary"/> Personal Advice</h3>
+                    <p>{advice.advice}</p>
+                </div>
+            ) },
+        ]);
+    } catch (error) {
+        console.error(error);
+        toast({
+          variant: "destructive",
+          title: "Error getting advice",
+          description: "Could not fetch personalized advice. Please try again later.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+  const handleDailyCheckIn = async () => {
+    setIsLoading(true);
+    setMessages((prev) => [
+        ...prev,
+        { id: `${Date.now()}-checkin-req`, role: 'system', content: "Starting daily check-in..." },
+    ]);
+    try {
+        const previousResponses = messages.filter(m => m.role === 'user').map(m => m.content).join('\n');
+        const checkin = await getDailyCheckIn({
+            previousResponses,
+            currentDate: new Date().toISOString()
+        });
+
+        const questionMessages: Message[] = checkin.questions.map((q, i) => ({
+            id: `${Date.now()}-q-${i}`,
+            role: 'assistant',
+            content: q,
+        }));
+
+        setMessages((prev) => [
+            ...prev,
+            ...questionMessages
+        ]);
+
+    } catch (error) {
+        console.error(error);
+        toast({
+          variant: "destructive",
+          title: "Error starting check-in",
+          description: "Could not fetch check-in questions. Please try again later.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+
+  return (
+    <>
+    <Card className="flex h-[calc(100vh-7rem-2rem)] flex-col">
+        <CardHeader className="flex flex-row items-center justify-between border-b">
+            <h2 className="font-headline text-xl">Your Support Chat</h2>
+            <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleDailyCheckIn} disabled={isLoading}>
+                    <Sun className="mr-2 h-4 w-4"/> Daily Check-in
+                </Button>
+                 <Button variant="outline" size="sm" onClick={handleGetAdvice} disabled={isLoading}>
+                    <Sparkles className="mr-2 h-4 w-4"/> Get Advice
+                </Button>
+            </div>
+        </CardHeader>
+      <CardContent className="flex-1 overflow-hidden p-0">
+        <ScrollArea className="h-full" ref={scrollAreaRef}>
+          <div className="p-6 space-y-6">
+            {messages.map((message) => {
+              if (message.role === 'system') {
+                return <div key={message.id} className="text-center text-xs text-muted-foreground">{message.content}</div>;
+              }
+              return (
+                <div
+                  key={message.id}
+                  className={cn(
+                    'flex items-start gap-4',
+                    message.role === 'user' && 'justify-end'
+                  )}
+                >
+                  {message.role === 'assistant' && (
+                    <Avatar className='border-2 border-primary'>
+                      <AvatarFallback>AI</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div
+                    className={cn(
+                      'max-w-[75%] rounded-lg p-3 text-sm',
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    )}
+                  >
+                    {message.content}
+                  </div>
+                   {message.role === 'user' && (
+                    <Avatar>
+                        <AvatarFallback>
+                            <UserIcon />
+                        </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+              );
+            })}
+             {isLoading && (
+              <div className="flex items-start gap-4">
+                <Avatar className='border-2 border-primary'>
+                  <AvatarFallback>AI</AvatarFallback>
+                </Avatar>
+                <div className="bg-muted rounded-lg p-3">
+                  <Loader className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </CardContent>
+      <CardFooter className="border-t p-4">
+        <form onSubmit={handleSendMessage} className="flex w-full items-center gap-2">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1 resize-none"
+            rows={1}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage(e as any);
+                }
+            }}
+            disabled={isLoading}
+          />
+          <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
+            <CornerDownLeft className="h-4 w-4" />
+            <span className="sr-only">Send</span>
+          </Button>
+          <Button type="button" variant="outline" size="icon" disabled={isLoading}>
+            <Mic className="h-4 w-4" />
+            <span className="sr-only">Use microphone</span>
+          </Button>
+          <Button type="button" variant="outline" size="icon" disabled={isLoading}>
+            <Paperclip className="h-4 w-4" />
+            <span className="sr-only">Attach file</span>
+          </Button>
+        </form>
+      </CardFooter>
+    </Card>
+    <EmergencyDialog 
+        open={isEmergency}
+        onOpenChange={(open) => {
+            if (!open) {
+                setIsEmergency(false);
+                setEscalationMessage('');
+            }
+        }}
+        escalationMessage={escalationMessage}
+    />
+    </>
+  );
+}
