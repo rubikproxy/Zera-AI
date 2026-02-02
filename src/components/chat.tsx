@@ -7,6 +7,7 @@ import {
   getPersonalizedAdvice,
   getSymptomUnderstanding,
   getWoundAnalysis,
+  getEPDSAssessment,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,12 +28,14 @@ import {
   Scan,
   Sparkles,
   Sun,
+  HeartPulse,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { EmergencyDialog } from './emergency-dialog';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import type { WoundAnalysisOutput } from '@/ai/flows/wound-analysis';
+import { epdsQuestions, type EpdsQuestion } from '@/lib/epds-questions';
 
 interface Message {
   id: string;
@@ -122,12 +125,48 @@ const WoundAnalysisResult = ({
   );
 };
 
+const EpdsQuestionDisplay = ({
+  question,
+  questionNumber,
+  onAnswer,
+}: {
+  question: EpdsQuestion;
+  questionNumber: number;
+  onAnswer: (answerIndex: number, answerText: string) => void;
+}) => {
+  return (
+    <div className="space-y-3">
+      <p className="font-semibold">
+        Question {questionNumber} of {epdsQuestions.length}:
+      </p>
+      <p>{question.text}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {question.options.map((option, index) => (
+          <Button
+            key={index}
+            variant="outline"
+            className="h-auto whitespace-normal justify-start text-left"
+            onClick={() => onAnswer(index, option)}
+          >
+            {option}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export function Chat() {
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEmergency, setIsEmergency] = useState(false);
   const [escalationMessage, setEscalationMessage] = useState('');
+
+  // State for EPDS Screening
+  const [isScreening, setIsScreening] = useState(false);
+  const [screeningQuestionIndex, setScreeningQuestionIndex] = useState(0);
+  const [screeningAnswers, setScreeningAnswers] = useState<number[]>([]);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,7 +183,7 @@ export function Chat() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || isScreening) return;
 
     const userInput = input;
     setMessages((prev) => [
@@ -372,17 +411,140 @@ export function Chat() {
     }
   };
 
+  const handleStartScreening = () => {
+    setIsScreening(true);
+    setScreeningQuestionIndex(0);
+    setScreeningAnswers([]);
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `${Date.now()}-screening-start`,
+        role: 'system',
+        content: 'Starting Mental Health Screening (EPDS)',
+      },
+      {
+        id: `${Date.now()}-q-0`,
+        role: 'assistant',
+        content: (
+          <EpdsQuestionDisplay
+            question={epdsQuestions[0]}
+            questionNumber={1}
+            onAnswer={handleEpdsAnswer}
+          />
+        ),
+      },
+    ]);
+  };
+
+  const handleEpdsAnswer = (answerIndex: number, answerText: string) => {
+    const newAnswers = [...screeningAnswers, answerIndex];
+    setScreeningAnswers(newAnswers);
+
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `${Date.now()}-a-${screeningQuestionIndex}`,
+        role: 'user',
+        content: answerText,
+      },
+    ]);
+
+    const nextQuestionIndex = screeningQuestionIndex + 1;
+    if (nextQuestionIndex < epdsQuestions.length) {
+      setScreeningQuestionIndex(nextQuestionIndex);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `${Date.now()}-q-${nextQuestionIndex}`,
+          role: 'assistant',
+          content: (
+            <EpdsQuestionDisplay
+              question={epdsQuestions[nextQuestionIndex]}
+              questionNumber={nextQuestionIndex + 1}
+              onAnswer={handleEpdsAnswer}
+            />
+          ),
+        },
+      ]);
+    } else {
+      // End of screening
+      finishEpdsScreening(newAnswers);
+    }
+  };
+
+  const finishEpdsScreening = async (finalAnswers: number[]) => {
+    setIsLoading(true);
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `${Date.now()}-screening-end`,
+        role: 'system',
+        content: 'Screening complete. Analyzing results...',
+      },
+    ]);
+
+    try {
+      const result = await getEPDSAssessment({ answers: finalAnswers });
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `${Date.now()}-assessment`,
+          role: 'assistant',
+          content: (
+             <div className={`space-y-2 rounded-lg border p-4 ${result.isHighRisk ? 'border-destructive bg-destructive/10' : 'border-accent bg-accent/20'}`}>
+                <h3 className="font-headline text-lg font-semibold flex items-center gap-2">
+                  <HeartPulse className="text-primary" /> Mental Health Assessment
+                </h3>
+                <p><strong>Your EPDS Score: {result.score}</strong></p>
+                <p>{result.assessment}</p>
+              </div>
+          )
+        },
+      ]);
+
+      if (result.isHighRisk) {
+        toast({
+          variant: 'destructive',
+          title: 'High Risk Detected',
+          description: 'Please review the assessment and consider contacting your healthcare provider.',
+          duration: 9000,
+        })
+      }
+
+    } catch (error) {
+      console.error('EPDS Assessment error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not analyze your screening results. Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+      setIsScreening(false);
+      setScreeningAnswers([]);
+      setScreeningQuestionIndex(0);
+    }
+  };
+
   return (
     <>
       <Card className="flex h-[calc(100vh-7rem-2rem)] flex-col">
         <CardHeader className="flex flex-row items-center justify-between border-b">
           <h2 className="font-headline text-xl">Your Support Chat</h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleStartScreening}
+              disabled={isLoading || isScreening}
+            >
+              <HeartPulse className="mr-2 h-4 w-4" /> Mental Health Screening
+            </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleDailyCheckIn}
-              disabled={isLoading}
+              disabled={isLoading || isScreening}
             >
               <Sun className="mr-2 h-4 w-4" /> Daily Check-in
             </Button>
@@ -390,7 +552,7 @@ export function Chat() {
               variant="outline"
               size="sm"
               onClick={handleGetAdvice}
-              disabled={isLoading}
+              disabled={isLoading || isScreening}
             >
               <Sparkles className="mr-2 h-4 w-4" /> Get Advice
             </Button>
@@ -436,7 +598,7 @@ export function Chat() {
                   </div>
                 );
               })}
-              {isLoading && (
+              {isLoading && !isScreening && (
                 <div className="flex items-start gap-4">
                   <Avatar className="border-2 border-primary">
                     <AvatarFallback>AI</AvatarFallback>
@@ -456,7 +618,7 @@ export function Chat() {
             onChange={handleFileChange}
             className="hidden"
             accept="image/*"
-            disabled={isLoading}
+            disabled={isLoading || isScreening}
           />
           <form
             onSubmit={handleSendMessage}
@@ -465,7 +627,7 @@ export function Chat() {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
+              placeholder={isScreening ? "Please select an option above." : "Type your message..."}
               className="flex-1 resize-none"
               rows={1}
               onKeyDown={(e) => {
@@ -474,12 +636,12 @@ export function Chat() {
                   handleSendMessage(e as any);
                 }
               }}
-              disabled={isLoading}
+              disabled={isLoading || isScreening}
             />
             <Button
               type="submit"
               size="icon"
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || !input.trim() || isScreening}
             >
               <CornerDownLeft className="h-4 w-4" />
               <span className="sr-only">Send</span>
@@ -488,7 +650,7 @@ export function Chat() {
               type="button"
               variant="outline"
               size="icon"
-              disabled={isLoading}
+              disabled={isLoading || isScreening}
             >
               <Mic className="h-4 w-4" />
               <span className="sr-only">Use microphone</span>
@@ -497,7 +659,7 @@ export function Chat() {
               type="button"
               variant="outline"
               size="icon"
-              disabled={isLoading}
+              disabled={isLoading || isScreening}
               onClick={handleAttachmentClick}
             >
               <Paperclip className="h-4 w-4" />
