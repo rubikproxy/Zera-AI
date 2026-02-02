@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'MomLink',
+  title: 'AI Zera',
   description: 'AI-powered support for new mothers',
 };
 

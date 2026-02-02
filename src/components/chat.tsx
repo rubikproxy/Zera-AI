@@ -47,7 +47,7 @@ const initialMessage: Message = {
   id: 'init',
   role: 'assistant',
   content:
-    "Hello! I'm MomLink, your personal postpartum support assistant. How are you feeling today? You can ask me for advice, tell me about your symptoms, or start your daily check-in.",
+    "Hello! I'm Zera, your personal postpartum support assistant. How are you feeling today? You can ask me for advice, tell me about your symptoms, or start your daily check-in.",
 };
 
 const WoundAnalysisResult = ({

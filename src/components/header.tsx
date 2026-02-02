@@ -7,7 +7,7 @@ export function Header() {
     <header className="flex h-20 items-center justify-between border-b bg-card px-6">
       <div className="flex items-center gap-3">
         <LifeBuoy className="h-8 w-8 text-primary" />
-        <h1 className="font-headline text-3xl font-bold text-foreground">MomLink</h1>
+        <h1 className="font-headline text-3xl font-bold text-foreground">AI Zera</h1>
       </div>
       <div className="flex items-center gap-4">
         <DropdownMenu>
