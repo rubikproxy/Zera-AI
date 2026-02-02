@@ -10,6 +10,8 @@ import { personalizedAdvice } from '@/ai/flows/personalized-advice';
 import type { PersonalizedAdviceInput } from '@/ai/flows/personalized-advice';
 import { understandSymptoms } from '@/ai/flows/symptom-understanding';
 import type { UnderstandSymptomsInput } from '@/ai/flows/symptom-understanding';
+import { analyzeWound } from '@/ai/flows/wound-analysis';
+import type { WoundAnalysisInput } from '@/ai/flows/wound-analysis';
 
 export async function getDailyCheckIn(input: DailyCheckInInput) {
   return await dailyCheckIn(input);
@@ -29,4 +31,8 @@ export async function getEmergencyEscalation(input: EmergencyEscalationInput) {
 
 export async function getPersonalizedAdvice(input: PersonalizedAdviceInput) {
   return await personalizedAdvice(input);
+}
+
+export async function getWoundAnalysis(input: WoundAnalysisInput) {
+  return await analyzeWound(input);
 }
