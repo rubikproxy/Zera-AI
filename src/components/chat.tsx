@@ -41,7 +41,13 @@ import {
   User,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import { EmergencyDialog } from './emergency-dialog';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import type { WoundAnalysisOutput } from '@/ai/flows/wound-analysis';
@@ -64,6 +70,13 @@ interface Message {
 
 interface ChatProps {
   language: string;
+}
+
+export interface ChatHandle {
+  handleGetHealthTip: () => void;
+  handleStartScreening: () => void;
+  handleDailyCheckIn: () => void;
+  handleGetAdvice: () => void;
 }
 
 const WoundAnalysisResult = ({
@@ -172,7 +185,11 @@ const EpdsQuestionDisplay = ({
   );
 };
 
-const BreastfeedingSupportResult = ({ result }: { result: BreastfeedingSupportOutput }) => {
+const BreastfeedingSupportResult = ({
+  result,
+}: {
+  result: BreastfeedingSupportOutput;
+}) => {
   return (
     <div className="space-y-3">
       <h3 className="font-headline text-lg font-semibold flex items-center gap-2">
@@ -186,18 +203,26 @@ const BreastfeedingSupportResult = ({ result }: { result: BreastfeedingSupportOu
         <div>
           <p className="font-semibold">Immediate Relief:</p>
           <ul className="list-disc list-inside pl-2 text-sm space-y-1">
-            {result.immediateRelief.map((tip, i) => <li key={i}>{tip}</li>)}
+            {result.immediateRelief.map((tip, i) => (
+              <li key={i}>{tip}</li>
+            ))}
           </ul>
         </div>
         <div>
           <p className="font-semibold">Long-Term Solutions:</p>
-           <ul className="list-disc list-inside pl-2 text-sm space-y-1">
-            {result.longTermSolutions.map((tip, i) => <li key={i}>{tip}</li>)}
+          <ul className="list-disc list-inside pl-2 text-sm space-y-1">
+            {result.longTermSolutions.map((tip, i) => (
+              <li key={i}>{tip}</li>
+            ))}
           </ul>
         </div>
         <div className="p-3 rounded-lg bg-pink-100/30 border border-pink-200/80 dark:bg-pink-900/20 dark:border-pink-800/40">
-          <p className="font-semibold text-accent-foreground">When to Call a Provider:</p>
-          <p className="text-sm text-accent-foreground/80">{result.whenToCallProvider}</p>
+          <p className="font-semibold text-accent-foreground">
+            When to Call a Provider:
+          </p>
+          <p className="text-sm text-accent-foreground/80">
+            {result.whenToCallProvider}
+          </p>
         </div>
       </div>
     </div>
@@ -215,13 +240,23 @@ const HealthTipResult = ({ result }: { result: HealthTipOutput }) => {
   );
 };
 
-const PersonalizedAdviceResult = ({ advice }: { advice: PersonalizedAdviceOutput }) => {
+const PersonalizedAdviceResult = ({
+  advice,
+}: {
+  advice: PersonalizedAdviceOutput;
+}) => {
   return (
     <div className="space-y-3">
       <h3 className="font-headline text-lg font-semibold flex items-center gap-2">
-        <Sparkles className="text-primary h-5 w-5" /> Here's some personalized advice
+        <Sparkles className="text-primary h-5 w-5" /> Here's some personalized
+        advice
       </h3>
-      <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+      <Accordion
+        type="single"
+        collapsible
+        className="w-full"
+        defaultValue="item-1"
+      >
         <AccordionItem value="item-1">
           <AccordionTrigger>
             <div className="flex items-center gap-2">
@@ -263,8 +298,7 @@ const PersonalizedAdviceResult = ({ advice }: { advice: PersonalizedAdviceOutput
   );
 };
 
-
-export function Chat({ language }: ChatProps) {
+export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -286,15 +320,22 @@ export function Chat({ language }: ChatProps) {
   // State for dynamic suggestions
   const initialSuggestions = [
     "I'm feeling really anxious and overwhelmed.",
-    "What are the signs of a c-section infection?",
-    "My baby is having trouble latching.",
-    "Tell me a tip for better postpartum sleep.",
+    'What are the signs of a c-section infection?',
+    'My baby is having trouble latching.',
+    'Tell me a tip for better postpartum sleep.',
   ];
   const [suggestions, setSuggestions] = useState<string[]>(initialSuggestions);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useImperativeHandle(ref, () => ({
+    handleGetHealthTip,
+    handleStartScreening,
+    handleDailyCheckIn,
+    handleGetAdvice,
+  }));
 
   useEffect(() => {
     // Send initial message when component mounts
@@ -319,7 +360,8 @@ export function Chat({ language }: ChatProps) {
           {
             id: 'init-error',
             role: 'assistant',
-            content: "Hello! I'm Zera, your personal postpartum support assistant. How are you feeling today?",
+            content:
+              "Hello! I'm Zera, your personal postpartum support assistant. How are you feeling today?",
           },
         ]);
       } finally {
@@ -329,7 +371,6 @@ export function Chat({ language }: ChatProps) {
     sendInitialMessage();
   }, [language]);
 
-
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({
@@ -338,7 +379,7 @@ export function Chat({ language }: ChatProps) {
       });
     }
   }, [messages]);
-  
+
   useEffect(() => {
     const fetchSuggestions = async () => {
       // Only fetch new suggestions if the last message was from the assistant,
@@ -378,12 +419,11 @@ export function Chat({ language }: ChatProps) {
 
     // Add a small delay to ensure the UI has updated before fetching
     const timer = setTimeout(() => {
-        fetchSuggestions();
+      fetchSuggestions();
     }, 500);
 
     return () => clearTimeout(timer);
   }, [messages, isScreening, isCheckingIn]);
-
 
   const handleCheckInResponse = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -463,7 +503,7 @@ export function Chat({ language }: ChatProps) {
 
   const submitMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading || isScreening) return;
-    
+
     setIsLoading(true);
     setMessages((prev) => [
       ...prev,
@@ -471,18 +511,30 @@ export function Chat({ language }: ChatProps) {
     ]);
 
     try {
-      const breastfeedingKeywords = ['breastfeeding', 'latch', 'nipple', 'sore nipples', 'feeding the baby', 'mastitis', 'engorgement'];
-      const isBreastfeedingQuery = breastfeedingKeywords.some(keyword => messageText.toLowerCase().includes(keyword));
+      const breastfeedingKeywords = [
+        'breastfeeding',
+        'latch',
+        'nipple',
+        'sore nipples',
+        'feeding the baby',
+        'mastitis',
+        'engorgement',
+      ];
+      const isBreastfeedingQuery = breastfeedingKeywords.some((keyword) =>
+        messageText.toLowerCase().includes(keyword)
+      );
 
       if (isBreastfeedingQuery) {
-        const result = await getBreastfeedingSupportAction({ problemDescription: messageText });
-        setMessages(prev => [
+        const result = await getBreastfeedingSupportAction({
+          problemDescription: messageText,
+        });
+        setMessages((prev) => [
           ...prev,
           {
             id: `${Date.now()}-breastfeeding`,
             role: 'assistant',
             content: <BreastfeedingSupportResult result={result} />,
-          }
+          },
         ]);
       } else {
         const understanding = await getSymptomUnderstanding({
@@ -534,8 +586,7 @@ export function Chat({ language }: ChatProps) {
     } finally {
       setIsLoading(false);
     }
-  }
-
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -545,11 +596,11 @@ export function Chat({ language }: ChatProps) {
     }
     const messageToSend = input;
     if (!messageToSend.trim()) return;
-    
+
     setInput('');
     await submitMessage(messageToSend);
   };
-  
+
   const handleSuggestionClick = async (suggestion: string) => {
     if (isLoading || isScreening || isCheckingIn) return;
     await submitMessage(suggestion);
@@ -670,7 +721,8 @@ export function Chat({ language }: ChatProps) {
       toast({
         variant: 'destructive',
         title: 'Error getting advice',
-        description: 'Could not fetch personalized advice. Please try again later.',
+        description:
+          'Could not fetch personalized advice. Please try again later.',
       });
     } finally {
       setIsLoading(false);
@@ -696,7 +748,7 @@ export function Chat({ language }: ChatProps) {
         previousResponses,
         currentDate: new Date().toISOString(),
       });
-      
+
       if (checkin.questions && checkin.questions.length > 0) {
         setCheckInQuestions(checkin.questions);
         setCheckInAnswers([]);
@@ -717,17 +769,18 @@ export function Chat({ language }: ChatProps) {
           {
             id: `${Date.now()}-checkin-no-q`,
             role: 'assistant',
-            content: "I don't have any check-in questions for you right now, but I'm here if you need to talk!",
+            content:
+              "I don't have any check-in questions for you right now, but I'm here if you need to talk!",
           },
         ]);
       }
-
     } catch (error) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: 'Error starting check-in',
-        description: 'Could not fetch check-in questions. Please try again later.',
+        description:
+          'Could not fetch check-in questions. Please try again later.',
       });
     } finally {
       setIsLoading(false);
@@ -738,7 +791,7 @@ export function Chat({ language }: ChatProps) {
     setIsScreening(true);
     setScreeningQuestionIndex(0);
     setScreeningAnswers([]);
-    setMessages(prev => [
+    setMessages((prev) => [
       ...prev,
       {
         id: `${Date.now()}-screening-start`,
@@ -763,7 +816,7 @@ export function Chat({ language }: ChatProps) {
     const newAnswers = [...screeningAnswers, answerIndex];
     setScreeningAnswers(newAnswers);
 
-    setMessages(prev => [
+    setMessages((prev) => [
       ...prev,
       {
         id: `${Date.now()}-a-${screeningQuestionIndex}`,
@@ -775,7 +828,7 @@ export function Chat({ language }: ChatProps) {
     const nextQuestionIndex = screeningQuestionIndex + 1;
     if (nextQuestionIndex < epdsQuestions.length) {
       setScreeningQuestionIndex(nextQuestionIndex);
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         {
           id: `${Date.now()}-q-${nextQuestionIndex}`,
@@ -797,7 +850,7 @@ export function Chat({ language }: ChatProps) {
 
   const finishEpdsScreening = async (finalAnswers: number[]) => {
     setIsLoading(true);
-    setMessages(prev => [
+    setMessages((prev) => [
       ...prev,
       {
         id: `${Date.now()}-screening-end`,
@@ -808,20 +861,28 @@ export function Chat({ language }: ChatProps) {
 
     try {
       const result = await getEPDSAssessment({ answers: finalAnswers });
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         {
           id: `${Date.now()}-assessment`,
           role: 'assistant',
           content: (
-             <div className={`space-y-2 rounded-lg border p-4 ${result.isHighRisk ? 'border-destructive bg-destructive/10' : 'border-accent bg-accent/20'}`}>
-                <h3 className="font-headline text-lg font-semibold flex items-center gap-2">
-                  <HeartPulse className="text-primary" /> Mental Health Assessment
-                </h3>
-                <p><strong>Your EPDS Score: {result.score}</strong></p>
-                <p>{result.assessment}</p>
-              </div>
-          )
+            <div
+              className={`space-y-2 rounded-lg border p-4 ${
+                result.isHighRisk
+                  ? 'border-destructive bg-destructive/10'
+                  : 'border-accent bg-accent/20'
+              }`}
+            >
+              <h3 className="font-headline text-lg font-semibold flex items-center gap-2">
+                <HeartPulse className="text-primary" /> Mental Health Assessment
+              </h3>
+              <p>
+                <strong>Your EPDS Score: {result.score}</strong>
+              </p>
+              <p>{result.assessment}</p>
+            </div>
+          ),
         },
       ]);
 
@@ -829,17 +890,18 @@ export function Chat({ language }: ChatProps) {
         toast({
           variant: 'destructive',
           title: 'High Risk Detected',
-          description: 'Please review the assessment and consider contacting your healthcare provider.',
+          description:
+            'Please review the assessment and consider contacting your healthcare provider.',
           duration: 9000,
-        })
+        });
       }
-
     } catch (error) {
       console.error('EPDS Assessment error:', error);
       toast({
         variant: 'destructive',
         title: 'Analysis Failed',
-        description: 'Could not analyze your screening results. Please try again.',
+        description:
+          'Could not analyze your screening results. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -861,8 +923,11 @@ export function Chat({ language }: ChatProps) {
     ]);
 
     try {
-      const result = await getHealthTipAction({ previousTips: shownTips, daysPostpartum: 14 });
-      setShownTips(prev => [...prev, result.tip]);
+      const result = await getHealthTipAction({
+        previousTips: shownTips,
+        daysPostpartum: 14,
+      });
+      setShownTips((prev) => [...prev, result.tip]);
       setMessages((prev) => [
         ...prev,
         {
@@ -884,102 +949,70 @@ export function Chat({ language }: ChatProps) {
   };
 
   const getPlaceholderText = () => {
-    if (isScreening) return "Please select an option above.";
-    if (isCheckingIn) return "Type your answer for the check-in...";
-    return "Type your message...";
-  }
+    if (isScreening) return 'Please select an option above.';
+    if (isCheckingIn) return 'Type your answer for the check-in...';
+    return 'Type your message...';
+  };
 
   return (
     <>
-      <div className="flex h-full flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGetHealthTip}
-              disabled={isLoading || isScreening || isCheckingIn}
-            >
-              <ClipboardCheck className="mr-2 h-4 w-4" /> Get Health Tip
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleStartScreening}
-              disabled={isLoading || isScreening || isCheckingIn}
-            >
-              <HeartPulse className="mr-2 h-4 w-4" /> Mental Health Screening
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDailyCheckIn}
-              disabled={isLoading || isScreening || isCheckingIn}
-            >
-              <Sun className="mr-2 h-4 w-4" /> Daily Check-in
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGetAdvice}
-              disabled={isLoading || isScreening || isCheckingIn}
-            >
-              <Sparkles className="mr-2 h-4 w-4" /> Get Advice
-            </Button>
-          </div>
-        <div className="flex-1 overflow-hidden rounded-xl border bg-card">
-          <ScrollArea className="h-full" ref={scrollAreaRef}>
-            <div className="p-6 space-y-6">
-              {messages.map((message) => {
-                if (message.role === 'system') {
-                  return (
-                    <div
-                      key={message.id}
-                      className="text-center text-xs text-muted-foreground"
-                    >
-                      {message.content}
-                    </div>
-                  );
-                }
+      <div className="flex h-full flex-col p-4 w-full">
+        <ScrollArea className="flex-1" ref={scrollAreaRef}>
+          <div className="p-6 space-y-6">
+            {messages.map((message) => {
+              if (message.role === 'system') {
                 return (
                   <div
                     key={message.id}
-                    className={cn(
-                      'flex items-start gap-3',
-                      message.role === 'user' && 'flex-row-reverse'
-                    )}
+                    className="text-center text-xs text-muted-foreground"
                   >
-                    <Avatar className="border">
-                      <AvatarFallback>
-                        {message.role === 'assistant' ? 'AI' : <User className="h-5 w-5" />}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div
-                      className={cn(
-                        'max-w-[75%] rounded-xl p-3 text-sm shadow-sm',
-                        message.role === 'user'
-                          ? 'rounded-br-none bg-primary text-primary-foreground'
-                          : 'rounded-bl-none bg-muted'
-                      )}
-                    >
-                      {message.content}
-                    </div>
+                    {message.content}
                   </div>
                 );
-              })}
-              {isLoading && !isScreening && !isCheckingIn && (
-                <div className="flex items-start gap-3">
-                   <Avatar className="border">
-                      <AvatarFallback>AI</AvatarFallback>
-                   </Avatar>
-                  <div className="bg-muted rounded-lg p-3">
-                    <Loader className="h-5 w-5 animate-spin text-muted-foreground" />
+              }
+              return (
+                <div
+                  key={message.id}
+                  className={cn(
+                    'flex items-start gap-3',
+                    message.role === 'user' && 'flex-row-reverse'
+                  )}
+                >
+                  <Avatar className="border">
+                    <AvatarFallback>
+                      {message.role === 'assistant' ? (
+                        'AI'
+                      ) : (
+                        <User className="h-5 w-5" />
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div
+                    className={cn(
+                      'max-w-[75%] rounded-xl p-3 text-sm shadow-sm',
+                      message.role === 'user'
+                        ? 'rounded-br-none bg-primary text-primary-foreground'
+                        : 'rounded-bl-none bg-muted'
+                    )}
+                  >
+                    {message.content}
                   </div>
                 </div>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
-        <div className="flex flex-col items-stretch gap-4">
+              );
+            })}
+            {isLoading && !isScreening && !isCheckingIn && (
+              <div className="flex items-start gap-3">
+                <Avatar className="border">
+                  <AvatarFallback>AI</AvatarFallback>
+                </Avatar>
+                <div className="bg-muted rounded-lg p-3">
+                  <Loader className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+        <div className="flex flex-col items-stretch gap-4 pt-4">
           {suggestions.length > 0 && !isScreening && !isCheckingIn && (
             <div>
               <p className="text-sm text-muted-foreground mb-2">Try asking:</p>
@@ -1006,10 +1039,7 @@ export function Chat({ language }: ChatProps) {
             accept="image/*"
             disabled={isLoading || isScreening || isCheckingIn}
           />
-          <form
-            onSubmit={handleSendMessage}
-            className="relative w-full"
-          >
+          <form onSubmit={handleSendMessage} className="relative w-full">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -1068,4 +1098,5 @@ export function Chat({ language }: ChatProps) {
       />
     </>
   );
-}
+});
+Chat.displayName = 'Chat';
