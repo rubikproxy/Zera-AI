@@ -193,7 +193,7 @@ const BreastfeedingSupportResult = ({ result }: { result: BreastfeedingSupportOu
             {result.longTermSolutions.map((tip, i) => <li key={i}>{tip}</li>)}
           </ul>
         </div>
-        <div className="p-3 rounded-lg bg-accent/50 border border-accent">
+        <div className="p-3 rounded-lg bg-pink-100/30 border border-pink-200/80 dark:bg-pink-900/20 dark:border-pink-800/40">
           <p className="font-semibold text-accent-foreground">When to Call a Provider:</p>
           <p className="text-sm text-accent-foreground/80">{result.whenToCallProvider}</p>
         </div>
@@ -404,29 +404,21 @@ export function Chat({ language }: ChatProps) {
     }
   };
 
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isCheckingIn) {
-      await handleCheckInResponse(e);
-      return;
-    }
-    if (!input.trim() || isLoading || isScreening) return;
-
-    const userInput = input;
+  const submitMessage = async (messageText: string) => {
+    if (!messageText.trim() || isLoading || isScreening) return;
+    
+    setIsLoading(true);
     setMessages((prev) => [
       ...prev,
-      { id: Date.now().toString(), role: 'user', content: userInput },
+      { id: Date.now().toString(), role: 'user', content: messageText },
     ]);
-    setInput('');
-    setIsLoading(true);
 
     try {
       const breastfeedingKeywords = ['breastfeeding', 'latch', 'nipple', 'sore nipples', 'feeding the baby', 'mastitis', 'engorgement'];
-      const isBreastfeedingQuery = breastfeedingKeywords.some(keyword => userInput.toLowerCase().includes(keyword));
+      const isBreastfeedingQuery = breastfeedingKeywords.some(keyword => messageText.toLowerCase().includes(keyword));
 
       if (isBreastfeedingQuery) {
-        const result = await getBreastfeedingSupportAction({ problemDescription: userInput });
+        const result = await getBreastfeedingSupportAction({ problemDescription: messageText });
         setMessages(prev => [
           ...prev,
           {
@@ -437,12 +429,12 @@ export function Chat({ language }: ChatProps) {
         ]);
       } else {
         const understanding = await getSymptomUnderstanding({
-          symptomsDescription: userInput,
+          symptomsDescription: messageText,
         });
 
         if (understanding.urgencyLevel === 'high') {
           const escalation = await getEmergencyEscalation({
-            symptoms: userInput,
+            symptoms: messageText,
             patientId: 'user-123',
             timestamp: new Date().toISOString(),
           });
@@ -458,7 +450,7 @@ export function Chat({ language }: ChatProps) {
           ]);
         } else {
           const empatheticResponse = await getEmpatheticResponse({
-            userInput: userInput,
+            userInput: messageText,
             context: 'User is a new mother in the postpartum period.',
             language: language,
           });
@@ -485,6 +477,25 @@ export function Chat({ language }: ChatProps) {
     } finally {
       setIsLoading(false);
     }
+  }
+
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isCheckingIn) {
+      await handleCheckInResponse(e);
+      return;
+    }
+    const messageToSend = input;
+    if (!messageToSend.trim()) return;
+    
+    setInput('');
+    await submitMessage(messageToSend);
+  };
+  
+  const handleSuggestionClick = async (suggestion: string) => {
+    if (isLoading || isScreening || isCheckingIn) return;
+    await submitMessage(suggestion);
   };
 
   const handleAttachmentClick = () => {
@@ -820,6 +831,16 @@ export function Chat({ language }: ChatProps) {
     if (isCheckingIn) return "Type your answer for the check-in...";
     return "Type your message...";
   }
+  
+  const suggestions = [
+    "I'm feeling really anxious and overwhelmed.",
+    "What are the signs of a c-section infection?",
+    "My baby is having trouble latching.",
+    "Tell me a tip for better postpartum sleep.",
+  ];
+  
+  const showSuggestions = messages.length <= 1 && !input;
+
 
   return (
     <>
@@ -890,10 +911,10 @@ export function Chat({ language }: ChatProps) {
                     )}
                     <div
                       className={cn(
-                        'max-w-[75%] p-3 text-sm shadow-sm',
+                        'max-w-[75%] rounded-2xl p-3 text-sm shadow-sm',
                         message.role === 'user'
-                          ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-none'
-                          : 'bg-muted rounded-2xl rounded-bl-none'
+                          ? 'rounded-br-none bg-primary text-primary-foreground'
+                          : 'rounded-bl-none bg-muted'
                       )}
                     >
                       {message.content}
@@ -914,7 +935,25 @@ export function Chat({ language }: ChatProps) {
             </div>
           </ScrollArea>
         </CardContent>
-        <CardFooter className="border-t p-4">
+        <CardFooter className="border-t p-4 flex flex-col items-stretch gap-4">
+          {showSuggestions && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Try asking:</p>
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map((s, i) => (
+                  <Button
+                    key={i}
+                    variant="outline"
+                    size="sm"
+                    className="h-auto justify-start text-left"
+                    onClick={() => handleSuggestionClick(s)}
+                  >
+                    {s}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
           <input
             type="file"
             ref={fileInputRef}
@@ -984,3 +1023,5 @@ export function Chat({ language }: ChatProps) {
     </>
   );
 }
+
+    
