@@ -1,16 +1,22 @@
 'use server';
 
-import type { z, ZodSchema } from 'zod';
+import type { z, ZodObject, ZodSchema } from 'zod';
 
 export async function callGroq<O extends ZodSchema>(promptText: string, outputSchema: O): Promise<z.infer<O>> {
     if (!process.env.GROQ_API_KEY) {
         throw new Error('Fallback failed: GROQ_API_KEY environment variable is not set.');
     }
 
+    let schemaInstructions = 'Your response must be a JSON object.';
+    // Check if it's a ZodObject to extract keys
+    if (outputSchema._def.typeName === 'ZodObject') {
+        const keys = Object.keys((outputSchema as ZodObject<any>).shape).map(k => `"${k}"`).join(', ');
+        schemaInstructions = `Your response must be a JSON object with the following keys: ${keys}.`;
+    }
+
     // Combine schema instructions into the system prompt for clarity
-    const systemPrompt = `You are an AI assistant that responds ONLY in valid JSON format. Your task is to process the user's request and provide a response that strictly conforms to the provided JSON schema. Do not include any explanatory text, markdown formatting, or anything other than the raw JSON object. The JSON schema for your output is: ${JSON.stringify(outputSchema.describe())}`;
+    const systemPrompt = `You are an AI assistant. Your task is to process the user's request and provide a response that strictly conforms to the requested JSON format. Do not include any explanatory text, markdown formatting, or anything other than the raw JSON object. ${schemaInstructions}`;
     
-    // The user prompt is just the original text
     const userPrompt = promptText;
 
     try {
@@ -26,7 +32,7 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
                     { "role": "system", "content": systemPrompt },
                     { "role": "user", "content": userPrompt }
                 ],
-                temperature: 0.1, // Lower temperature for more predictable JSON output
+                temperature: 0.1,
                 response_format: { type: 'json_object' },
             }),
         });
