@@ -11,8 +11,7 @@
 import {ai} from '@/ai/genkit';
 import { symptomUnderstandingPrompt } from '@/ai/prompts/symptom-understanding.prompt';
 import {z} from 'genkit';
-import { callGroq } from '../groq-fallback';
-import Mustache from 'mustache';
+import { withGroqFallback } from '../groq-fallback';
 
 const UnderstandSymptomsInputSchema = z.object({
   symptomsDescription: z
@@ -47,6 +46,13 @@ const prompt = ai.definePrompt({
   prompt: symptomUnderstandingPrompt,
 });
 
+const promptWithFallback = withGroqFallback(
+    prompt,
+    symptomUnderstandingPrompt,
+    UnderstandSymptomsOutputSchema,
+    'understandSymptomsFlow'
+);
+
 const understandSymptomsFlow = ai.defineFlow(
   {
     name: 'understandSymptomsFlow',
@@ -54,17 +60,7 @@ const understandSymptomsFlow = ai.defineFlow(
     outputSchema: UnderstandSymptomsOutputSchema,
   },
   async input => {
-    try {
-      const {output} = await prompt(input);
-      return output!;
-    } catch (e: any) {
-        if (e.message && (e.message.includes('429') || e.message.includes('rate limit'))) {
-            console.warn('Gemini rate limit exceeded. Falling back to Groq for symptom understanding.');
-            const renderedPrompt = Mustache.render(symptomUnderstandingPrompt, input);
-            return await callGroq(renderedPrompt, UnderstandSymptomsOutputSchema);
-        } else {
-            throw e;
-        }
-    }
+    const { output } = await promptWithFallback(input);
+    return output!;
   }
 );

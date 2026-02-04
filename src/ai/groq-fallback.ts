@@ -1,6 +1,57 @@
-'use server';
-
 import type { z, ZodObject, ZodSchema } from 'zod';
+import Mustache from 'mustache';
+
+type PromptFn<I, O> = (input: I) => Promise<{ output: O | null }>;
+
+/**
+ * A higher-order function that wraps a Genkit prompt function with fallback logic.
+ * If the primary function fails due to rate limiting or other specific errors,
+ * it retries the request using the Groq API.
+ * @param originalPrompt The original Genkit prompt function.
+ * @param promptTemplate The Mustache template string for the fallback prompt.
+ * @param outputSchema The Zod schema for the output.
+ * @param flowName A name for logging purposes.
+ * @returns An async function with the same signature as the original, but with fallback logic.
+ */
+export function withGroqFallback<I extends object, O>(
+  originalPrompt: PromptFn<I, O>,
+  promptTemplate: string,
+  outputSchema: ZodSchema<O>,
+  flowName: string
+) {
+  return async (input: I): Promise<{ output: O | null }> => {
+    try {
+      const response = await originalPrompt(input);
+      // Also trigger fallback if the primary service returns an empty or null output, which can happen with safety filters.
+      if (response.output === null || response.output === undefined) {
+          throw new Error('Primary AI service returned empty output.');
+      }
+      return response;
+    } catch (e: any) {
+      // Check for rate limit, server errors, or empty output errors from the primary service.
+      if (
+        (e.message && (e.message.includes('429') || e.message.includes('rate limit') || e.message.includes('503'))) ||
+        (e.message && e.message.includes('Primary AI service returned empty output'))
+      ) {
+        console.warn(`Gemini API issue in ${flowName}. Falling back to Groq.`);
+        try {
+            const renderedPrompt = Mustache.render(promptTemplate, input);
+            const fallbackOutput = await callGroq(renderedPrompt, outputSchema);
+            return { output: fallbackOutput };
+        } catch (fallbackError) {
+            console.error(`Groq fallback for [${flowName}] also failed:`, fallbackError);
+            // Throw a more specific error if the fallback also fails.
+            throw new Error(`The fallback AI service failed for ${flowName} after the primary service was unavailable.`);
+        }
+      } else {
+        // Re-throw any other unexpected errors.
+        console.error(`An unexpected error occurred in ${flowName} that did not trigger fallback:`, e);
+        throw e;
+      }
+    }
+  };
+}
+
 
 export async function callGroq<O extends ZodSchema>(promptText: string, outputSchema: O): Promise<z.infer<O>> {
     if (!process.env.GROQ_API_KEY) {
@@ -8,12 +59,13 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
     }
 
     let schemaInstructions = 'Your response must be a JSON object.';
-    // Check if it's a ZodObject to extract keys
+    // Dynamically create instructions for the LLM based on the expected Zod schema.
     if (outputSchema._def.typeName === 'ZodObject') {
         const keys = Object.keys((outputSchema as ZodObject<any>).shape).map(k => `"${k}"`).join(', ');
         schemaInstructions = `IMPORTANT: Your response must be a valid JSON object with the following keys: ${keys}. Do not include any other text, reasoning, or markdown formatting. Respond only with the raw JSON object.`;
     }
     
+    // Construct a clear system prompt and a simple user prompt.
     const systemPrompt = `${promptText}\n\n${schemaInstructions}`;
     const userPrompt = "Generate the response based on the instructions provided in the system prompt.";
 
@@ -25,12 +77,12 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
                 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
             },
             body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile', // Using a powerful, known model
+                model: 'llama3-70b-8192',
                 messages: [
                     { "role": "system", "content": systemPrompt },
                     { "role": "user", "content": userPrompt }
                 ],
-                temperature: 0.1,
+                temperature: 0.1, // Lower temperature for more predictable, structured output
                 response_format: { type: 'json_object' },
             }),
         });
@@ -49,7 +101,7 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
 
         let jsonContent = result.choices[0].message.content;
 
-        // Defensively extract JSON from the response string
+        // Defensively extract JSON from the response string, in case the model wraps it in markdown.
         const firstBrace = jsonContent.indexOf('{');
         const lastBrace = jsonContent.lastIndexOf('}');
         if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
@@ -66,6 +118,7 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
             throw new Error(`JSON parsing failed: ${parseError.message}`);
         }
 
+        // Validate the parsed JSON against the provided Zod schema.
         const validationResult = outputSchema.safeParse(parsedJson);
         if (!validationResult.success) {
             console.error("Groq response failed Zod validation:", validationResult.error.format());
@@ -75,7 +128,8 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
         return validationResult.data;
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('Error during Groq fallback:', errorMessage);
+        console.error('Error during Groq fallback execution:', errorMessage);
+        // Throw a generic error to the client.
         throw new Error(`The fallback AI service also failed. Please try again later.`);
     }
 }

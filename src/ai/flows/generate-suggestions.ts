@@ -10,8 +10,7 @@
 import {ai} from '@/ai/genkit';
 import { generateSuggestionsPrompt } from '@/ai/prompts/generate-suggestions.prompt';
 import {z} from 'genkit';
-import { callGroq } from '../groq-fallback';
-import Mustache from 'mustache';
+import { withGroqFallback } from '../groq-fallback';
 
 const GenerateSuggestionsInputSchema = z.object({
   conversationHistory: z.string().describe("A summary of the recent conversation between the user and the AI."),
@@ -35,6 +34,13 @@ const prompt = ai.definePrompt({
   prompt: generateSuggestionsPrompt,
 });
 
+const promptWithFallback = withGroqFallback(
+    prompt,
+    generateSuggestionsPrompt,
+    GenerateSuggestionsOutputSchema,
+    'generateSuggestionsFlow'
+);
+
 const generateSuggestionsFlow = ai.defineFlow(
   {
     name: 'generateSuggestionsFlow',
@@ -42,17 +48,7 @@ const generateSuggestionsFlow = ai.defineFlow(
     outputSchema: GenerateSuggestionsOutputSchema,
   },
   async input => {
-    try {
-      const {output} = await prompt(input);
-      return output!;
-    } catch (e: any) {
-        if (e.message && (e.message.includes('429') || e.message.includes('rate limit'))) {
-            console.warn('Gemini rate limit exceeded. Falling back to Groq for generating suggestions.');
-            const renderedPrompt = Mustache.render(generateSuggestionsPrompt, input);
-            return await callGroq(renderedPrompt, GenerateSuggestionsOutputSchema);
-        } else {
-            throw e;
-        }
-    }
+    const { output } = await promptWithFallback(input);
+    return output!;
   }
 );

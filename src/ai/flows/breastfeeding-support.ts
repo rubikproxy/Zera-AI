@@ -10,8 +10,7 @@
 import {ai} from '@/ai/genkit';
 import { breastfeedingSupportPrompt } from '@/ai/prompts/breastfeeding-support.prompt';
 import {z} from 'genkit';
-import { callGroq } from '../groq-fallback';
-import Mustache from 'mustache';
+import { withGroqFallback } from '../groq-fallback';
 
 const BreastfeedingSupportInputSchema = z.object({
   problemDescription: z.string().describe('The user\'s description of their breastfeeding problem (e.g., "my nipples are sore", "baby won\'t latch").'),
@@ -38,6 +37,13 @@ const prompt = ai.definePrompt({
   prompt: breastfeedingSupportPrompt,
 });
 
+const promptWithFallback = withGroqFallback(
+  prompt,
+  breastfeedingSupportPrompt,
+  BreastfeedingSupportOutputSchema,
+  'breastfeedingSupportFlow'
+);
+
 const breastfeedingSupportFlow = ai.defineFlow(
   {
     name: 'breastfeedingSupportFlow',
@@ -45,17 +51,7 @@ const breastfeedingSupportFlow = ai.defineFlow(
     outputSchema: BreastfeedingSupportOutputSchema,
   },
   async input => {
-    try {
-      const {output} = await prompt(input);
-      return output!;
-    } catch (e: any) {
-        if (e.message && (e.message.includes('429') || e.message.includes('rate limit'))) {
-            console.warn('Gemini rate limit exceeded. Falling back to Groq for breastfeeding support.');
-            const renderedPrompt = Mustache.render(breastfeedingSupportPrompt, input);
-            return await callGroq(renderedPrompt, BreastfeedingSupportOutputSchema);
-        } else {
-            throw e;
-        }
-    }
+    const { output } = await promptWithFallback(input);
+    return output!;
   }
 );

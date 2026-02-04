@@ -10,8 +10,7 @@
 import {ai} from '@/ai/genkit';
 import { personalizedAdvicePrompt } from '@/ai/prompts/personalized-advice.prompt';
 import {z} from 'genkit';
-import { callGroq } from '../groq-fallback';
-import Mustache from 'mustache';
+import { withGroqFallback } from '../groq-fallback';
 
 const PersonalizedAdviceInputSchema = z.object({
   healthData: z.string().describe('A summary of the mother’s current physical and mental health data, including symptoms, vital signs, and mood.'),
@@ -41,6 +40,13 @@ const prompt = ai.definePrompt({
   prompt: personalizedAdvicePrompt,
 });
 
+const promptWithFallback = withGroqFallback(
+    prompt,
+    personalizedAdvicePrompt,
+    PersonalizedAdviceOutputSchema,
+    'personalizedAdviceFlow'
+);
+
 const personalizedAdviceFlow = ai.defineFlow(
   {
     name: 'personalizedAdviceFlow',
@@ -48,17 +54,7 @@ const personalizedAdviceFlow = ai.defineFlow(
     outputSchema: PersonalizedAdviceOutputSchema,
   },
   async input => {
-    try {
-      const {output} = await prompt(input);
-      return output!;
-    } catch (e: any) {
-        if (e.message && (e.message.includes('429') || e.message.includes('rate limit'))) {
-            console.warn('Gemini rate limit exceeded. Falling back to Groq for personalized advice.');
-            const renderedPrompt = Mustache.render(personalizedAdvicePrompt, input);
-            return await callGroq(renderedPrompt, PersonalizedAdviceOutputSchema);
-        } else {
-            throw e;
-        }
-    }
+    const { output } = await promptWithFallback(input);
+    return output!;
   }
 );

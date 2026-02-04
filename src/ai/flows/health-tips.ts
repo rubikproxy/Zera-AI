@@ -10,8 +10,7 @@
 import {ai} from '@/ai/genkit';
 import { healthTipsPrompt } from '@/ai/prompts/health-tips.prompt';
 import {z} from 'genkit';
-import { callGroq } from '../groq-fallback';
-import Mustache from 'mustache';
+import { withGroqFallback } from '../groq-fallback';
 
 const HealthTipInputSchema = z.object({
   previousTips: z.array(z.string()).describe('A list of tips that have already been shown to the user to avoid repetition.'),
@@ -36,6 +35,13 @@ const prompt = ai.definePrompt({
   prompt: healthTipsPrompt,
 });
 
+const promptWithFallback = withGroqFallback(
+    prompt,
+    healthTipsPrompt,
+    HealthTipOutputSchema,
+    'healthTipFlow'
+);
+
 const healthTipFlow = ai.defineFlow(
   {
     name: 'healthTipFlow',
@@ -43,17 +49,7 @@ const healthTipFlow = ai.defineFlow(
     outputSchema: HealthTipOutputSchema,
   },
   async input => {
-    try {
-      const {output} = await prompt(input);
-      return output!;
-    } catch (e: any) {
-        if (e.message && (e.message.includes('429') || e.message.includes('rate limit'))) {
-            console.warn('Gemini rate limit exceeded. Falling back to Groq for health tips.');
-            const renderedPrompt = Mustache.render(healthTipsPrompt, input);
-            return await callGroq(renderedPrompt, HealthTipOutputSchema);
-        } else {
-            throw e;
-        }
-    }
+    const { output } = await promptWithFallback(input);
+    return output!;
   }
 );

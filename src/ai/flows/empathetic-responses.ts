@@ -11,8 +11,7 @@
 import {ai} from '@/ai/genkit';
 import { mainPrompt } from '@/ai/prompts/main.prompt';
 import {z} from 'genkit';
-import { callGroq } from '../groq-fallback';
-import Mustache from 'mustache';
+import { withGroqFallback } from '../groq-fallback';
 import { empatheticResponseFallbackPrompt } from '@/ai/prompts/empathetic-response-fallback.prompt';
 
 const EmpatheticResponseInputSchema = z.object({
@@ -41,6 +40,13 @@ const prompt = ai.definePrompt({
   prompt: mainPrompt,
 });
 
+const promptWithFallback = withGroqFallback(
+    prompt,
+    empatheticResponseFallbackPrompt,
+    EmpatheticResponseOutputSchema,
+    'empatheticResponseFlow'
+);
+
 const empatheticResponseFlow = ai.defineFlow(
   {
     name: 'empatheticResponseFlow',
@@ -48,17 +54,7 @@ const empatheticResponseFlow = ai.defineFlow(
     outputSchema: EmpatheticResponseOutputSchema,
   },
   async input => {
-    try {
-      const {output} = await prompt(input);
-      return output!;
-    } catch (e: any) {
-        if (e.message && (e.message.includes('429') || e.message.includes('rate limit'))) {
-            console.warn('Gemini rate limit exceeded. Falling back to Groq for empathetic response.');
-            const renderedPrompt = Mustache.render(empatheticResponseFallbackPrompt, input);
-            return await callGroq(renderedPrompt, EmpatheticResponseOutputSchema);
-        } else {
-            throw e;
-        }
-    }
+    const { output } = await promptWithFallback(input);
+    return output!;
   }
 );

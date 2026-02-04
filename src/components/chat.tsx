@@ -13,12 +13,6 @@ import {
   getSuggestions,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +22,6 @@ import {
   ClipboardCheck,
   CornerDownLeft,
   Loader,
-  Mic,
   Paperclip,
   Scan,
   Sparkles,
@@ -355,12 +348,12 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
             content: empatheticResponse.response,
           },
         ]);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error getting initial greeting:', error);
         const fallbackGreeting = {
-            English: "Hello! I'm Zera, your postpartum health assistant. I'm having a little trouble connecting right now, but I'm here to help. How can I support you?",
-            Español: "¡Hola! Soy Zera, tu asistente de salud posparto. Tengo un pequeño problema de conexión en este momento, pero estoy aquí para ayudarte. ¿Cómo puedo apoyarte?",
-            Français: "Bonjour ! Je suis Zera, votre assistante de santé post-partum. J'ai un petit souci de connexion en ce moment, mais je suis là pour vous aider. Comment puis-je vous accompagner ?"
+            English: "Hello! I'm Zera, your postpartum health assistant. I'm here to support you during your postpartum journey. How are you feeling today?",
+            Español: "¡Hola! Soy Zera, tu asistente de salud posparto. Estoy aquí para apoyarte durante tu viaje posparto. ¿Cómo te sientes hoy?",
+            Français: "Bonjour ! Je suis Zera, votre assistante de santé post-partum. Je suis là pour vous accompagner pendant votre parcours postpartum. Comment vous sentez-vous aujourd'hui ?"
         };
         type LanguageKey = keyof typeof fallbackGreeting;
         setMessages([
@@ -372,8 +365,8 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
         ]);
         toast({
             variant: 'destructive',
-            title: 'Connection Error',
-            description: 'Could not fetch initial greeting from AI.',
+            title: 'AI Connection Error',
+            description: error.message || 'Could not connect to the AI service.',
         });
       } finally {
         setIsLoading(false);
@@ -397,7 +390,6 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
       if (
         messages.length > 0 &&
         messages[messages.length - 1].role === 'assistant' &&
-        typeof messages[messages.length - 1].content === 'string' &&
         !isScreening &&
         !isCheckingIn
       ) {
@@ -419,10 +411,12 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
           }
         } catch (error) {
           console.error('Failed to fetch dynamic suggestions:', error);
+          // Don't show a toast for this, just fall back to initial suggestions
           setSuggestions(initialSuggestions);
         }
       }
     };
+    // Debounce the call to avoid excessive requests
     const timer = setTimeout(() => {
       fetchSuggestions();
     }, 500);
@@ -489,8 +483,13 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
             content: empatheticResponse.response,
           },
         ]);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error getting check-in summary:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Analysis Error',
+            description: error.message || 'Could not analyze check-in responses.',
+        });
         setMessages((prev) => [
           ...prev,
           {
@@ -510,6 +509,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
     if (!messageText.trim() || isLoading || isScreening) return;
 
     setIsLoading(true);
+    setSuggestions([]); // Hide suggestions while processing
     setMessages((prev) => [
       ...prev,
       { id: Date.now().toString(), role: 'user', content: messageText },
@@ -563,9 +563,17 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
             },
           ]);
         } else {
+          const conversationHistory = messages
+            .map((m) => {
+                if (typeof m.content === 'string') return `${m.role}: ${m.content}`;
+                return null;
+            })
+            .filter(Boolean)
+            .join('\n');
+
           const empatheticResponse = await getEmpatheticResponse({
             userInput: messageText,
-            context: 'User is a new mother in the postpartum period.',
+            context: conversationHistory,
             language: language,
           });
           setMessages((prev) => [
@@ -578,14 +586,19 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
           ]);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+       toast({
+            variant: 'destructive',
+            title: 'An Error Occurred',
+            description: error.message || 'Sorry, I encountered an error. Please try again.',
+        });
       setMessages((prev) => [
         ...prev,
         {
           id: `${Date.now()}-error`,
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.',
+          content: 'I seem to be having trouble connecting. Please try again in a moment.',
         },
       ]);
     } finally {
@@ -655,6 +668,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
         ]);
 
         setIsLoading(true);
+        setSuggestions([]);
 
         getWoundAnalysis({ photoDataUri, daysPostSurgery: 7 /* Example value */ })
           .then((analysis) => {
@@ -695,6 +709,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
 
   const handleGetAdvice = async () => {
     setIsLoading(true);
+    setSuggestions([]);
     setMessages((prev) => [
       ...prev,
       {
@@ -721,13 +736,12 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
           content: <PersonalizedAdviceResult advice={advice} />,
         },
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: 'Error getting advice',
-        description:
-          'Could not fetch personalized advice. Please try again later.',
+        description: error.message || 'Could not fetch personalized advice.',
       });
     } finally {
       setIsLoading(false);
@@ -736,6 +750,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
 
   const handleDailyCheckIn = async () => {
     setIsLoading(true);
+    setSuggestions([]);
     setMessages((prev) => [
       ...prev,
       {
@@ -779,13 +794,12 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
           },
         ]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: 'Error starting check-in',
-        description:
-          'Could not fetch check-in questions. Please try again later.',
+        description: error.message || 'Could not fetch check-in questions.',
       });
     } finally {
       setIsLoading(false);
@@ -796,6 +810,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
     setIsScreening(true);
     setScreeningQuestionIndex(0);
     setScreeningAnswers([]);
+    setSuggestions([]);
     setMessages((prev) => [
       ...prev,
       {
@@ -900,13 +915,12 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
           duration: 9000,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('EPDS Assessment error:', error);
       toast({
         variant: 'destructive',
         title: 'Analysis Failed',
-        description:
-          'Could not analyze your screening results. Please try again.',
+        description: error.message || 'Could not analyze your screening results.',
       });
     } finally {
       setIsLoading(false);
@@ -918,6 +932,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
 
   const handleGetHealthTip = async () => {
     setIsLoading(true);
+    setSuggestions([]);
     setMessages((prev) => [
       ...prev,
       {
@@ -941,12 +956,12 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
           content: <HealthTipResult result={result} />,
         },
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: 'Error getting tip',
-        description: 'Could not fetch a health tip. Please try again later.',
+        description: error.message || 'Could not fetch a health tip.',
       });
     } finally {
       setIsLoading(false);
@@ -1018,7 +1033,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
           </div>
         </ScrollArea>
         <div className="flex flex-col items-stretch gap-4 pt-4">
-          {suggestions.length > 0 && !isScreening && !isCheckingIn && (
+          {!isLoading && suggestions.length > 0 && !isScreening && !isCheckingIn && (
             <div>
               <p className="text-sm text-muted-foreground mb-2">Try asking:</p>
               <div className="flex flex-wrap gap-2">
@@ -1049,7 +1064,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={getPlaceholderText()}
-              className="flex-1 resize-none rounded-xl border p-3 pr-32"
+              className="flex-1 resize-none rounded-xl border p-3 pr-24"
               rows={1}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -1059,32 +1074,24 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
               }}
               disabled={isLoading || isScreening || (isCheckingIn && isLoading)}
             />
-            <div className="absolute bottom-2.5 right-3 flex items-center gap-2">
+            <div className="absolute bottom-2.5 right-3 flex items-center gap-1">
               <Button
                 type="submit"
                 size="icon"
+                variant="ghost"
                 disabled={isLoading || !input.trim() || isScreening}
               >
-                <CornerDownLeft className="h-4 w-4" />
+                <CornerDownLeft className="h-5 w-5" />
                 <span className="sr-only">Send</span>
               </Button>
               <Button
                 type="button"
-                variant="outline"
-                size="icon"
-                disabled={isLoading || isScreening || isCheckingIn}
-              >
-                <Mic className="h-4 w-4" />
-                <span className="sr-only">Use microphone</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 disabled={isLoading || isScreening || isCheckingIn}
                 onClick={handleAttachmentClick}
               >
-                <Paperclip className="h-4 w-4" />
+                <Paperclip className="h-5 w-5" />
                 <span className="sr-only">Attach file</span>
               </Button>
             </div>

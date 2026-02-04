@@ -11,8 +11,7 @@
 import {ai} from '@/ai/genkit';
 import { emergencyEscalationPrompt } from '@/ai/prompts/emergency-escalation.prompt';
 import {z} from 'genkit';
-import { callGroq } from '../groq-fallback';
-import Mustache from 'mustache';
+import { withGroqFallback } from '../groq-fallback';
 
 const EmergencyEscalationInputSchema = z.object({
   symptoms: z
@@ -53,6 +52,13 @@ const prompt = ai.definePrompt({
   prompt: emergencyEscalationPrompt,
 });
 
+const promptWithFallback = withGroqFallback(
+    prompt,
+    emergencyEscalationPrompt,
+    EmergencyEscalationOutputSchema,
+    'emergencyEscalationFlow'
+);
+
 const emergencyEscalationFlow = ai.defineFlow(
   {
     name: 'emergencyEscalationFlow',
@@ -60,17 +66,7 @@ const emergencyEscalationFlow = ai.defineFlow(
     outputSchema: EmergencyEscalationOutputSchema,
   },
   async input => {
-    try {
-      const {output} = await prompt(input);
-      return output!;
-    } catch (e: any) {
-        if (e.message && (e.message.includes('429') || e.message.includes('rate limit'))) {
-            console.warn('Gemini rate limit exceeded. Falling back to Groq for emergency escalation.');
-            const renderedPrompt = Mustache.render(emergencyEscalationPrompt, input);
-            return await callGroq(renderedPrompt, EmergencyEscalationOutputSchema);
-        } else {
-            throw e;
-        }
-    }
+    const { output } = await promptWithFallback(input);
+    return output!;
   }
 );
