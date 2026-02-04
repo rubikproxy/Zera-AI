@@ -62,6 +62,16 @@ import {
 } from './ui/accordion';
 import type { PersonalizedAdviceOutput } from '@/ai/flows/personalized-advice';
 
+const initialGreetings = {
+  English:
+    "Hello! I'm Zera, your postpartum health assistant. I'm here to support you and your baby's health and well-being. How are you feeling today? Do you have any concerns about your recovery or baby?",
+  Español:
+    '¡Hola! Soy Zera, tu asistente de salud posparto. Estoy aquí para apoyarte con tu salud y el bienestar de tu bebé. ¿Cómo te sientes hoy? ¿Tienes alguna preocupación sobre tu recuperación o tu bebé?',
+  Français:
+    "Bonjour ! Je suis Zera, votre assistante de santé post-partum. Je suis là pour vous accompagner, ainsi que pour veiller à la santé et au bien-être de votre bébé. Comment vous sentez-vous aujourd'hui ? Avez-vous des inquiétudes concernant votre rétablissement ou votre bébé ?",
+};
+type LanguageKey = keyof typeof initialGreetings;
+
 interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -338,37 +348,16 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
   }));
 
   useEffect(() => {
-    // Send initial message when component mounts
-    async function sendInitialMessage() {
-      setIsLoading(true);
-      try {
-        const empatheticResponse = await getEmpatheticResponse({
-          userInput: 'Hello, this is my first time here.',
-          context: 'This is the very first message from a new user.',
-          language: language,
-        });
-        setMessages([
-          {
-            id: 'init',
-            role: 'assistant',
-            content: empatheticResponse.response,
-          },
-        ]);
-      } catch (error) {
-        console.error(error);
-        setMessages([
-          {
-            id: 'init-error',
-            role: 'assistant',
-            content:
-              "Hello! I'm Zera, your personal postpartum support assistant. How are you feeling today?",
-          },
-        ]);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    sendInitialMessage();
+    // Send initial, hardcoded message when component mounts or language changes
+    const greeting =
+      initialGreetings[language as LanguageKey] || initialGreetings.English;
+    setMessages([
+      {
+        id: 'init',
+        role: 'assistant',
+        content: greeting,
+      },
+    ]);
   }, [language]);
 
   useEffect(() => {

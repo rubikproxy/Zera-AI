@@ -25,7 +25,7 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
                 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
             },
             body: JSON.stringify({
-                model: 'llama3-70b-8192', // Using a powerful, known model
+                model: 'llama-3.3-70b-versatile', // Using a powerful, known model
                 messages: [
                     { "role": "system", "content": systemPrompt },
                     { "role": "user", "content": userPrompt }
