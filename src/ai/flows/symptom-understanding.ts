@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { symptomUnderstandingPrompt } from '@/ai/prompts/symptom-understanding.prompt';
 import {z} from 'genkit';
 
 const UnderstandSymptomsInputSchema = z.object({
@@ -41,17 +42,7 @@ const prompt = ai.definePrompt({
   name: 'understandSymptomsPrompt',
   input: {schema: UnderstandSymptomsInputSchema},
   output: {schema: UnderstandSymptomsOutputSchema},
-  prompt: `You are a medical assistant specializing in postpartum care. Your task is to understand the symptoms described by a new mother and provide a summary, extract keywords, and determine the urgency level.
-
-Description of Symptoms: {{{symptomsDescription}}}
-
-Respond in the following JSON format:
-{
-  "symptomsSummary": "", // A concise summary of the symptoms.
-  "symptomsKeywords": ["", ""], // A list of keywords related to the symptoms.
-  "urgencyLevel": "low|medium|high" // The urgency level (low, medium, or high) based on the description.
-}
-`,
+  prompt: symptomUnderstandingPrompt,
 });
 
 const understandSymptomsFlow = ai.defineFlow(

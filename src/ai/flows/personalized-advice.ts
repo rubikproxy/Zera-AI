@@ -8,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { personalizedAdvicePrompt } from '@/ai/prompts/personalized-advice.prompt';
 import {z} from 'genkit';
 
 const PersonalizedAdviceInputSchema = z.object({
@@ -35,17 +36,7 @@ const prompt = ai.definePrompt({
   name: 'personalizedAdvicePrompt',
   input: {schema: PersonalizedAdviceInputSchema},
   output: {schema: PersonalizedAdviceOutputSchema},
-  prompt: `You are a helpful AI assistant that provides personalized advice to new mothers during the postpartum period.
-  Based on the following information, offer tailored advice broken down into four categories: physical recovery, nutrition, exercise, and mental well-being.
-
-  Health Data: {{{healthData}}}
-  Recovery Progress: {{{recoveryProgress}}}
-  Nutrition Preferences: {{{nutritionPreferences}}}
-  Exercise Level: {{{exerciseLevel}}}
-  Mental Wellbeing: {{{mentalWellbeing}}}
-
-  Provide actionable and supportive advice for each category to help the mother improve her overall health.
-`,
+  prompt: personalizedAdvicePrompt,
 });
 
 const personalizedAdviceFlow = ai.defineFlow(

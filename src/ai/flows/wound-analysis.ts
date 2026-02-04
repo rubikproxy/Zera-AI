@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { woundAnalysisPrompt } from '@/ai/prompts/wound-analysis.prompt';
 import {z} from 'genkit';
 
 const WoundAnalysisInputSchema = z.object({
@@ -50,23 +51,7 @@ const prompt = ai.definePrompt({
   name: 'woundAnalysisPrompt',
   input: {schema: WoundAnalysisInputSchema},
   output: {schema: WoundAnalysisOutputSchema},
-  prompt: `You are a medical image analysis system for postpartum wound assessment.
-
-  Image type: C-section surgical wound
-  Days post-surgery: {{{daysPostSurgery}}}
-
-  Analyze the provided image for the following:
-  1.  **Healing stage**: Assess the current healing stage.
-  2.  **Infection signs**:
-      *   **Redness/Erythema**: Is there significant redness around the incision?
-      *   **Swelling/Edema**: Is there noticeable swelling?
-      *   **Discharge/Exudate**: Is there any fluid coming from the wound? If so, what type?
-  3.  **Overall Assessment**: Based on the signs, categorize the wound's status.
-  4.  **Recommendations**: Provide clear, simple next steps for the user.
-
-  Photo: {{media url=photoDataUri}}
-  
-  Respond in the specified JSON format.`,
+  prompt: woundAnalysisPrompt,
 });
 
 const woundAnalysisFlow = ai.defineFlow(
