@@ -7,17 +7,11 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
         throw new Error('Fallback failed: GROQ_API_KEY environment variable is not set.');
     }
 
-    const systemPrompt = `You are a helpful assistant that responds in JSON format. Your task is to follow the user's request and provide a response that conforms to the provided Zod schema. Do not include any other text or formatting. Just the raw JSON object.`;
+    // Combine schema instructions into the system prompt for clarity
+    const systemPrompt = `You are an AI assistant that responds ONLY in valid JSON format. Your task is to process the user's request and provide a response that strictly conforms to the provided JSON schema. Do not include any explanatory text, markdown formatting, or anything other than the raw JSON object. The JSON schema for your output is: ${JSON.stringify(outputSchema.describe())}`;
     
-    const userPrompt = `
-        User Request:
-        ---
-        ${promptText}
-        ---
-        
-        Please provide a JSON response that validates against this Zod schema description:
-        ${JSON.stringify(outputSchema.describe(), null, 2)}
-    `;
+    // The user prompt is just the original text
+    const userPrompt = promptText;
 
     try {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -27,12 +21,12 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
                 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
             },
             body: JSON.stringify({
-                model: 'llama3-70b-8192', // Using a reliable Llama 3 model from Groq
+                model: 'llama3-70b-8192',
                 messages: [
                     { "role": "system", "content": systemPrompt },
                     { "role": "user", "content": userPrompt }
                 ],
-                temperature: 0.2, // Lower temperature for more predictable JSON output
+                temperature: 0.1, // Lower temperature for more predictable JSON output
                 response_format: { type: 'json_object' },
             }),
         });
@@ -43,12 +37,26 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
         }
 
         const result = await response.json();
-        const jsonContent = result.choices[0].message.content;
+        
+        if (!result.choices || result.choices.length === 0 || !result.choices[0].message.content) {
+            console.error('Groq response is missing expected content:', JSON.stringify(result, null, 2));
+            throw new Error('Groq returned an invalid response structure.');
+        }
+
+        let jsonContent = result.choices[0].message.content;
+
+        // Defensively extract JSON from the response string, in case it's wrapped in text or markdown
+        const firstBrace = jsonContent.indexOf('{');
+        const lastBrace = jsonContent.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          jsonContent = jsonContent.substring(firstBrace, lastBrace + 1);
+        }
+
         const parsedJson = JSON.parse(jsonContent);
 
         const validationResult = outputSchema.safeParse(parsedJson);
         if (!validationResult.success) {
-            console.error("Groq response failed Zod validation:", validationResult.error);
+            console.error("Groq response failed Zod validation:", validationResult.error.format());
             throw new Error(`Groq response failed Zod validation: ${validationResult.error.message}`);
         }
 
