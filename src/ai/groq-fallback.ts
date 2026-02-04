@@ -25,7 +25,7 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
                 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
             },
             body: JSON.stringify({
-                model: 'mixtral-8x7b-32768',
+                model: 'llama3-70b-8192', // Using a powerful, known model
                 messages: [
                     { "role": "system", "content": systemPrompt },
                     { "role": "user", "content": userPrompt }
@@ -44,29 +44,38 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
         
         if (!result.choices || result.choices.length === 0 || !result.choices[0].message.content) {
             console.error('Groq response is missing expected content:', JSON.stringify(result, null, 2));
-            throw new Error('Groq returned an invalid response structure.');
+            throw new Error('Groq returned an invalid or empty response structure.');
         }
 
         let jsonContent = result.choices[0].message.content;
 
-        // Defensively extract JSON from the response string, in case it's wrapped in text or markdown
+        // Defensively extract JSON from the response string
         const firstBrace = jsonContent.indexOf('{');
         const lastBrace = jsonContent.lastIndexOf('}');
-        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-          jsonContent = jsonContent.substring(firstBrace, lastBrace + 1);
+        if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+            console.error('Groq response did not contain a valid JSON object string. Response:', jsonContent);
+            throw new Error('Groq response was not in the expected JSON format.');
         }
-
-        const parsedJson = JSON.parse(jsonContent);
+        jsonContent = jsonContent.substring(firstBrace, lastBrace + 1);
+        
+        let parsedJson;
+        try {
+            parsedJson = JSON.parse(jsonContent);
+        } catch (parseError: any) {
+            console.error('Failed to parse JSON from Groq response. Raw content:', jsonContent);
+            throw new Error(`JSON parsing failed: ${parseError.message}`);
+        }
 
         const validationResult = outputSchema.safeParse(parsedJson);
         if (!validationResult.success) {
             console.error("Groq response failed Zod validation:", validationResult.error.format());
-            throw new Error(`Groq response failed Zod validation: ${validationResult.error.message}`);
+            throw new Error(`Groq response failed data validation: ${validationResult.error.message}`);
         }
 
         return validationResult.data;
     } catch (error) {
-        console.error('Error during Groq fallback:', error);
-        throw new Error('The fallback AI service also failed. Please try again later.');
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('Error during Groq fallback:', errorMessage);
+        throw new Error(`The fallback AI service also failed. Please try again later.`);
     }
 }
