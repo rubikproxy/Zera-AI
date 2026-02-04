@@ -839,7 +839,7 @@ export function Chat({ language }: ChatProps) {
     "Tell me a tip for better postpartum sleep.",
   ];
   
-  const showSuggestions = messages.length <= 1 && !input;
+  const showSuggestions = !input;
 
 
   return (
