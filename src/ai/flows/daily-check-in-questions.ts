@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import { questionPrompt } from '@/ai/prompts/question.prompt';
 import {z} from 'genkit';
 import { callGroq } from '../groq-fallback';
-import { render } from 'mustache';
+import Mustache from 'mustache';
 
 const DailyCheckInInputSchema = z.object({
   previousResponses: z
@@ -57,7 +57,7 @@ const dailyCheckInFlow = ai.defineFlow(
     } catch (e: any) {
         if (e.message && (e.message.includes('429') || e.message.includes('rate limit'))) {
             console.warn('Gemini rate limit exceeded. Falling back to Groq for daily check-in.');
-            const renderedPrompt = render(questionPrompt, input);
+            const renderedPrompt = Mustache.render(questionPrompt, input);
             return await callGroq(renderedPrompt, DailyCheckInOutputSchema);
         } else {
             throw e;

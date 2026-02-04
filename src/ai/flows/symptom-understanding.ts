@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import { symptomUnderstandingPrompt } from '@/ai/prompts/symptom-understanding.prompt';
 import {z} from 'genkit';
 import { callGroq } from '../groq-fallback';
-import { render } from 'mustache';
+import Mustache from 'mustache';
 
 const UnderstandSymptomsInputSchema = z.object({
   symptomsDescription: z
@@ -60,7 +60,7 @@ const understandSymptomsFlow = ai.defineFlow(
     } catch (e: any) {
         if (e.message && (e.message.includes('429') || e.message.includes('rate limit'))) {
             console.warn('Gemini rate limit exceeded. Falling back to Groq for symptom understanding.');
-            const renderedPrompt = render(symptomUnderstandingPrompt, input);
+            const renderedPrompt = Mustache.render(symptomUnderstandingPrompt, input);
             return await callGroq(renderedPrompt, UnderstandSymptomsOutputSchema);
         } else {
             throw e;

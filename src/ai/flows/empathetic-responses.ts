@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import { mainPrompt } from '@/ai/prompts/main.prompt';
 import {z} from 'genkit';
 import { callGroq } from '../groq-fallback';
-import { render } from 'mustache';
+import Mustache from 'mustache';
 
 const EmpatheticResponseInputSchema = z.object({
   userInput: z.string().describe('The user input or message from the new mother.'),
@@ -53,7 +53,7 @@ const empatheticResponseFlow = ai.defineFlow(
     } catch (e: any) {
         if (e.message && (e.message.includes('429') || e.message.includes('rate limit'))) {
             console.warn('Gemini rate limit exceeded. Falling back to Groq for empathetic response.');
-            const renderedPrompt = render(mainPrompt, input);
+            const renderedPrompt = Mustache.render(mainPrompt, input);
             return await callGroq(renderedPrompt, EmpatheticResponseOutputSchema);
         } else {
             throw e;
