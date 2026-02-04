@@ -33,6 +33,10 @@ import {
   Sparkles,
   Sun,
   HeartPulse,
+  Bandage,
+  Utensils,
+  Dumbbell,
+  BrainCircuit,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
@@ -42,6 +46,13 @@ import type { WoundAnalysisOutput } from '@/ai/flows/wound-analysis';
 import { epdsQuestions, type EpdsQuestion } from '@/lib/epds-questions';
 import type { BreastfeedingSupportOutput } from '@/ai/flows/breastfeeding-support';
 import type { HealthTipOutput } from '@/ai/flows/health-tips';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from './ui/accordion';
+import type { PersonalizedAdviceOutput } from '@/ai/flows/personalized-advice';
 
 interface Message {
   id: string;
@@ -198,6 +209,54 @@ const HealthTipResult = ({ result }: { result: HealthTipOutput }) => {
         <ClipboardCheck className="text-primary" /> {result.category} Tip
       </h3>
       <p>{result.tip}</p>
+    </div>
+  );
+};
+
+const PersonalizedAdviceResult = ({ advice }: { advice: PersonalizedAdviceOutput }) => {
+  return (
+    <div className="space-y-3">
+      <h3 className="font-headline text-lg font-semibold flex items-center gap-2">
+        <Sparkles className="text-primary h-5 w-5" /> Here's some personalized advice
+      </h3>
+      <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+        <AccordionItem value="item-1">
+          <AccordionTrigger>
+            <div className="flex items-center gap-2">
+              <Bandage className="h-5 w-5 text-primary/80" />
+              Physical Recovery
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>{advice.recoveryAdvice}</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="item-2">
+          <AccordionTrigger>
+            <div className="flex items-center gap-2">
+              <Utensils className="h-5 w-5 text-primary/80" />
+              Nutrition & Hydration
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>{advice.nutritionAdvice}</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="item-3">
+          <AccordionTrigger>
+            <div className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 text-primary/80" />
+              Exercise
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>{advice.exerciseAdvice}</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="item-4">
+          <AccordionTrigger>
+            <div className="flex items-center gap-2">
+              <BrainCircuit className="h-5 w-5 text-primary/80" />
+              Mental Well-being
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>{advice.mentalWellbeingAdvice}</AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };
@@ -535,14 +594,7 @@ export function Chat({ language }: ChatProps) {
         {
           id: Date.now().toString(),
           role: 'assistant',
-          content: (
-            <div className="space-y-2 rounded-lg border border-accent bg-accent/20 p-4">
-              <h3 className="font-headline text-lg font-semibold flex items-center gap-2">
-                <Sparkles className="text-primary" /> Personal Advice
-              </h3>
-              <p>{advice.advice}</p>
-            </div>
-          ),
+          content: <PersonalizedAdviceResult advice={advice} />,
         },
       ]);
     } catch (error) {
@@ -772,7 +824,7 @@ export function Chat({ language }: ChatProps) {
   return (
     <>
       <Card className="flex h-[calc(100vh-7rem-2rem)] flex-col">
-        <CardHeader className="flex flex-row items-center justify-between border-b">
+        <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/30">
           <h2 className="font-headline text-xl">Your Support Chat</h2>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -838,10 +890,10 @@ export function Chat({ language }: ChatProps) {
                     )}
                     <div
                       className={cn(
-                        'max-w-[75%] rounded-lg p-3 text-sm',
+                        'max-w-[75%] p-3 text-sm shadow-sm',
                         message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
+                          ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-none'
+                          : 'bg-muted rounded-2xl rounded-bl-none'
                       )}
                     >
                       {message.content}

@@ -20,7 +20,10 @@ const PersonalizedAdviceInputSchema = z.object({
 export type PersonalizedAdviceInput = z.infer<typeof PersonalizedAdviceInputSchema>;
 
 const PersonalizedAdviceOutputSchema = z.object({
-  advice: z.string().describe('Tailored advice on recovery progress, nutrition, exercise, and mental well-being.'),
+  recoveryAdvice: z.string().describe('Advice related to physical recovery.'),
+  nutritionAdvice: z.string().describe('Advice related to nutrition and hydration.'),
+  exerciseAdvice: z.string().describe('Advice related to safe, gentle exercise.'),
+  mentalWellbeingAdvice: z.string().describe('Advice related to mental and emotional well-being.'),
 });
 export type PersonalizedAdviceOutput = z.infer<typeof PersonalizedAdviceOutputSchema>;
 
@@ -33,7 +36,7 @@ const prompt = ai.definePrompt({
   input: {schema: PersonalizedAdviceInputSchema},
   output: {schema: PersonalizedAdviceOutputSchema},
   prompt: `You are a helpful AI assistant that provides personalized advice to new mothers during the postpartum period.
-  Based on the following information, offer tailored advice on recovery progress, nutrition, exercise, and mental well-being.
+  Based on the following information, offer tailored advice broken down into four categories: physical recovery, nutrition, exercise, and mental well-being.
 
   Health Data: {{{healthData}}}
   Recovery Progress: {{{recoveryProgress}}}
@@ -41,7 +44,7 @@ const prompt = ai.definePrompt({
   Exercise Level: {{{exerciseLevel}}}
   Mental Wellbeing: {{{mentalWellbeing}}}
 
-  Provide actionable and supportive advice to help the mother improve her overall health.
+  Provide actionable and supportive advice for each category to help the mother improve her overall health.
 `,
 });
 
