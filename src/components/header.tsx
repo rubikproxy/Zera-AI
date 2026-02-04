@@ -6,7 +6,12 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Languages, Menu, LifeBuoy } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from './ui/sheet';
 
 interface HeaderProps {
   language: string;
@@ -25,9 +30,10 @@ export function Header({ language, setLanguage, sidebarNav }: HeaderProps) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="flex flex-col p-0">
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <nav className="grid gap-2 text-lg font-medium">
             <a
-              href="#"
+              href="/"
               className="flex items-center gap-4 text-lg font-semibold mb-4 border-b pb-4 px-6 pt-3"
             >
               <LifeBuoy className="h-6 w-6 text-primary" />
