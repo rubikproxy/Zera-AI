@@ -62,16 +62,6 @@ import {
 } from './ui/accordion';
 import type { PersonalizedAdviceOutput } from '@/ai/flows/personalized-advice';
 
-const initialGreetings = {
-  English:
-    "Hello! I'm Zera, your postpartum health assistant. I'm here to support you and your baby's health and well-being. How are you feeling today? Do you have any concerns about your recovery or baby?",
-  Español:
-    '¡Hola! Soy Zera, tu asistente de salud posparto. Estoy aquí para apoyarte con tu salud y el bienestar de tu bebé. ¿Cómo te sientes hoy? ¿Tienes alguna preocupación sobre tu recuperación o tu bebé?',
-  Français:
-    "Bonjour ! Je suis Zera, votre assistante de santé post-partum. Je suis là pour vous accompagner, ainsi que pour veiller à la santé et au bien-être de votre bébé. Comment vous sentez-vous aujourd'hui ? Avez-vous des inquiétudes concernant votre rétablissement ou votre bébé ?",
-};
-type LanguageKey = keyof typeof initialGreetings;
-
 interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -348,17 +338,50 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
   }));
 
   useEffect(() => {
-    // Send initial, hardcoded message when component mounts or language changes
-    const greeting =
-      initialGreetings[language as LanguageKey] || initialGreetings.English;
-    setMessages([
-      {
-        id: 'init',
-        role: 'assistant',
-        content: greeting,
-      },
-    ]);
-  }, [language]);
+    const getInitialGreeting = async () => {
+      setIsLoading(true);
+      setMessages([]);
+      try {
+        const empatheticResponse = await getEmpatheticResponse({
+          userInput: 'Hi, introduce yourself as Zera, an AI health assistant for postpartum care.',
+          context: 'This is the very beginning of the conversation. Be warm and welcoming, and ask how the user is feeling.',
+          language: language,
+        });
+
+        setMessages([
+          {
+            id: 'init',
+            role: 'assistant',
+            content: empatheticResponse.response,
+          },
+        ]);
+      } catch (error) {
+        console.error('Error getting initial greeting:', error);
+        const fallbackGreeting = {
+            English: "Hello! I'm Zera, your postpartum health assistant. I'm having a little trouble connecting right now, but I'm here to help. How can I support you?",
+            Español: "¡Hola! Soy Zera, tu asistente de salud posparto. Tengo un pequeño problema de conexión en este momento, pero estoy aquí para ayudarte. ¿Cómo puedo apoyarte?",
+            Français: "Bonjour ! Je suis Zera, votre assistante de santé post-partum. J'ai un petit souci de connexion en ce moment, mais je suis là pour vous aider. Comment puis-je vous accompagner ?"
+        };
+        type LanguageKey = keyof typeof fallbackGreeting;
+        setMessages([
+          {
+            id: 'init-error',
+            role: 'assistant',
+            content: fallbackGreeting[language as LanguageKey] || fallbackGreeting.English,
+          },
+        ]);
+        toast({
+            variant: 'destructive',
+            title: 'Connection Error',
+            description: 'Could not fetch initial greeting from AI.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getInitialGreeting();
+  }, [language, toast]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -371,8 +394,6 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      // Only fetch new suggestions if the last message was from the assistant,
-      // the content is a string, and we are not in a special flow.
       if (
         messages.length > 0 &&
         messages[messages.length - 1].role === 'assistant' &&
@@ -381,12 +402,11 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
         !isCheckingIn
       ) {
         const conversationHistory = messages
-          .slice(-6) // take last 6 messages for context
+          .slice(-6) 
           .map((m) => {
             if (typeof m.content === 'string') {
               return `${m.role}: ${m.content}`;
             }
-            // For React components, just use a placeholder
             return `${m.role}: [UI Component]`;
           })
           .join('\n\n');
@@ -394,19 +414,15 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
         try {
           const result = await getSuggestions({ conversationHistory });
           if (result.suggestions && result.suggestions.length > 0) {
-            // A set to prevent duplicate suggestions
             const uniqueSuggestions = [...new Set(result.suggestions)];
             setSuggestions(uniqueSuggestions);
           }
         } catch (error) {
           console.error('Failed to fetch dynamic suggestions:', error);
-          // Fallback to initial suggestions on error
           setSuggestions(initialSuggestions);
         }
       }
     };
-
-    // Add a small delay to ensure the UI has updated before fetching
     const timer = setTimeout(() => {
       fetchSuggestions();
     }, 500);
