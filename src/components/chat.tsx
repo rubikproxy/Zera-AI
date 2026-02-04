@@ -38,6 +38,7 @@ import {
   Utensils,
   Dumbbell,
   BrainCircuit,
+  User,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
@@ -890,10 +891,8 @@ export function Chat({ language }: ChatProps) {
 
   return (
     <>
-      <Card className="flex h-[calc(100vh-7rem-2rem)] flex-col">
-        <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/30">
-          <h2 className="font-headline text-xl">Your Support Chat</h2>
-          <div className="flex flex-wrap gap-2">
+      <div className="flex h-full flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -927,8 +926,7 @@ export function Chat({ language }: ChatProps) {
               <Sparkles className="mr-2 h-4 w-4" /> Get Advice
             </Button>
           </div>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-hidden p-0">
+        <div className="flex-1 overflow-hidden rounded-xl border bg-card">
           <ScrollArea className="h-full" ref={scrollAreaRef}>
             <div className="p-6 space-y-6">
               {messages.map((message) => {
@@ -946,18 +944,18 @@ export function Chat({ language }: ChatProps) {
                   <div
                     key={message.id}
                     className={cn(
-                      'flex items-start gap-4',
-                      message.role === 'user' && 'justify-end'
+                      'flex items-start gap-3',
+                      message.role === 'user' && 'flex-row-reverse'
                     )}
                   >
-                    {message.role === 'assistant' && (
-                      <Avatar className="border-2 border-primary">
-                        <AvatarFallback>AI</AvatarFallback>
-                      </Avatar>
-                    )}
+                    <Avatar className="border">
+                      <AvatarFallback>
+                        {message.role === 'assistant' ? 'AI' : <User className="h-5 w-5" />}
+                      </AvatarFallback>
+                    </Avatar>
                     <div
                       className={cn(
-                        'max-w-[75%] rounded-2xl p-3 text-sm shadow-sm',
+                        'max-w-[75%] rounded-xl p-3 text-sm shadow-sm',
                         message.role === 'user'
                           ? 'rounded-br-none bg-primary text-primary-foreground'
                           : 'rounded-bl-none bg-muted'
@@ -969,10 +967,10 @@ export function Chat({ language }: ChatProps) {
                 );
               })}
               {isLoading && !isScreening && !isCheckingIn && (
-                <div className="flex items-start gap-4">
-                  <Avatar className="border-2 border-primary">
-                    <AvatarFallback>AI</AvatarFallback>
-                  </Avatar>
+                <div className="flex items-start gap-3">
+                   <Avatar className="border">
+                      <AvatarFallback>AI</AvatarFallback>
+                   </Avatar>
                   <div className="bg-muted rounded-lg p-3">
                     <Loader className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
@@ -980,8 +978,8 @@ export function Chat({ language }: ChatProps) {
               )}
             </div>
           </ScrollArea>
-        </CardContent>
-        <CardFooter className="border-t p-4 flex flex-col items-stretch gap-4">
+        </div>
+        <div className="flex flex-col items-stretch gap-4">
           {suggestions.length > 0 && !isScreening && !isCheckingIn && (
             <div>
               <p className="text-sm text-muted-foreground mb-2">Try asking:</p>
@@ -1010,13 +1008,13 @@ export function Chat({ language }: ChatProps) {
           />
           <form
             onSubmit={handleSendMessage}
-            className="flex w-full items-center gap-2"
+            className="relative w-full"
           >
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={getPlaceholderText()}
-              className="flex-1 resize-none"
+              className="flex-1 resize-none rounded-xl border p-3 pr-32"
               rows={1}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -1026,36 +1024,38 @@ export function Chat({ language }: ChatProps) {
               }}
               disabled={isLoading || isScreening || (isCheckingIn && isLoading)}
             />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={isLoading || !input.trim() || isScreening}
-            >
-              <CornerDownLeft className="h-4 w-4" />
-              <span className="sr-only">Send</span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              disabled={isLoading || isScreening || isCheckingIn}
-            >
-              <Mic className="h-4 w-4" />
-              <span className="sr-only">Use microphone</span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              disabled={isLoading || isScreening || isCheckingIn}
-              onClick={handleAttachmentClick}
-            >
-              <Paperclip className="h-4 w-4" />
-              <span className="sr-only">Attach file</span>
-            </Button>
+            <div className="absolute bottom-2.5 right-3 flex items-center gap-2">
+              <Button
+                type="submit"
+                size="icon"
+                disabled={isLoading || !input.trim() || isScreening}
+              >
+                <CornerDownLeft className="h-4 w-4" />
+                <span className="sr-only">Send</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                disabled={isLoading || isScreening || isCheckingIn}
+              >
+                <Mic className="h-4 w-4" />
+                <span className="sr-only">Use microphone</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                disabled={isLoading || isScreening || isCheckingIn}
+                onClick={handleAttachmentClick}
+              >
+                <Paperclip className="h-4 w-4" />
+                <span className="sr-only">Attach file</span>
+              </Button>
+            </div>
           </form>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
       <EmergencyDialog
         open={isEmergency}
         onOpenChange={(open) => {
@@ -1069,5 +1069,3 @@ export function Chat({ language }: ChatProps) {
     </>
   );
 }
-
-    
