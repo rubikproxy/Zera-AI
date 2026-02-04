@@ -340,10 +340,12 @@ export function Chat({ language }: ChatProps) {
   
   useEffect(() => {
     const fetchSuggestions = async () => {
-      // Only fetch new suggestions if the last message was from the assistant and we are not in a special flow
+      // Only fetch new suggestions if the last message was from the assistant,
+      // the content is a string, and we are not in a special flow.
       if (
         messages.length > 0 &&
         messages[messages.length - 1].role === 'assistant' &&
+        typeof messages[messages.length - 1].content === 'string' &&
         !isScreening &&
         !isCheckingIn
       ) {
