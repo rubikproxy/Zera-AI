@@ -11,13 +11,11 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
     // Check if it's a ZodObject to extract keys
     if (outputSchema._def.typeName === 'ZodObject') {
         const keys = Object.keys((outputSchema as ZodObject<any>).shape).map(k => `"${k}"`).join(', ');
-        schemaInstructions = `Your response must be a JSON object with the following keys: ${keys}.`;
+        schemaInstructions = `IMPORTANT: Your response must be a valid JSON object with the following keys: ${keys}. Do not include any other text, reasoning, or markdown formatting. Respond only with the raw JSON object.`;
     }
-
-    // Combine schema instructions into the system prompt for clarity
-    const systemPrompt = `You are an AI assistant. Your task is to process the user's request and provide a response that strictly conforms to the requested JSON format. Do not include any explanatory text, markdown formatting, or anything other than the raw JSON object. ${schemaInstructions}`;
     
-    const userPrompt = promptText;
+    const systemPrompt = `${promptText}\n\n${schemaInstructions}`;
+    const userPrompt = "Generate the response based on the instructions provided in the system prompt.";
 
     try {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -27,7 +25,7 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
                 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
             },
             body: JSON.stringify({
-                model: 'llama3-70b-8192',
+                model: 'mixtral-8x7b-32768',
                 messages: [
                     { "role": "system", "content": systemPrompt },
                     { "role": "user", "content": userPrompt }
