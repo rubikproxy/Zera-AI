@@ -18,6 +18,8 @@ import { getBreastfeedingSupport } from '@/ai/flows/breastfeeding-support';
 import type { BreastfeedingSupportInput } from '@/ai/flows/breastfeeding-support';
 import { getHealthTip } from '@/ai/flows/health-tips';
 import type { HealthTipInput } from '@/ai/flows/health-tips';
+import { generateSuggestions } from '@/ai/flows/generate-suggestions';
+import type { GenerateSuggestionsInput } from '@/ai/flows/generate-suggestions';
 
 
 export async function getDailyCheckIn(input: DailyCheckInInput) {
@@ -54,4 +56,8 @@ export async function getBreastfeedingSupportAction(input: BreastfeedingSupportI
 
 export async function getHealthTipAction(input: HealthTipInput) {
     return await getHealthTip(input);
+}
+
+export async function getSuggestions(input: GenerateSuggestionsInput) {
+    return await generateSuggestions(input);
 }

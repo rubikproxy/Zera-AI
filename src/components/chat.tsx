@@ -10,6 +10,7 @@ import {
   getEPDSAssessment,
   getBreastfeedingSupportAction,
   getHealthTipAction,
+  getSuggestions,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -281,6 +282,15 @@ export function Chat({ language }: ChatProps) {
   const [checkInStep, setCheckInStep] = useState(0);
   const [checkInAnswers, setCheckInAnswers] = useState<string[]>([]);
 
+  // State for dynamic suggestions
+  const initialSuggestions = [
+    "I'm feeling really anxious and overwhelmed.",
+    "What are the signs of a c-section infection?",
+    "My baby is having trouble latching.",
+    "Tell me a tip for better postpartum sleep.",
+  ];
+  const [suggestions, setSuggestions] = useState<string[]>(initialSuggestions);
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -327,6 +337,50 @@ export function Chat({ language }: ChatProps) {
       });
     }
   }, [messages]);
+  
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      // Only fetch new suggestions if the last message was from the assistant and we are not in a special flow
+      if (
+        messages.length > 0 &&
+        messages[messages.length - 1].role === 'assistant' &&
+        !isScreening &&
+        !isCheckingIn
+      ) {
+        const conversationHistory = messages
+          .slice(-6) // take last 6 messages for context
+          .map((m) => {
+            if (typeof m.content === 'string') {
+              return `${m.role}: ${m.content}`;
+            }
+            // For React components, just use a placeholder
+            return `${m.role}: [UI Component]`;
+          })
+          .join('\n\n');
+
+        try {
+          const result = await getSuggestions({ conversationHistory });
+          if (result.suggestions && result.suggestions.length > 0) {
+            // A set to prevent duplicate suggestions
+            const uniqueSuggestions = [...new Set(result.suggestions)];
+            setSuggestions(uniqueSuggestions);
+          }
+        } catch (error) {
+          console.error('Failed to fetch dynamic suggestions:', error);
+          // Fallback to initial suggestions on error
+          setSuggestions(initialSuggestions);
+        }
+      }
+    };
+
+    // Add a small delay to ensure the UI has updated before fetching
+    const timer = setTimeout(() => {
+        fetchSuggestions();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [messages, isScreening, isCheckingIn]);
+
 
   const handleCheckInResponse = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -831,16 +885,6 @@ export function Chat({ language }: ChatProps) {
     if (isCheckingIn) return "Type your answer for the check-in...";
     return "Type your message...";
   }
-  
-  const suggestions = [
-    "I'm feeling really anxious and overwhelmed.",
-    "What are the signs of a c-section infection?",
-    "My baby is having trouble latching.",
-    "Tell me a tip for better postpartum sleep.",
-  ];
-  
-  const showSuggestions = !input;
-
 
   return (
     <>
@@ -936,7 +980,7 @@ export function Chat({ language }: ChatProps) {
           </ScrollArea>
         </CardContent>
         <CardFooter className="border-t p-4 flex flex-col items-stretch gap-4">
-          {showSuggestions && (
+          {suggestions.length > 0 && !isScreening && !isCheckingIn && (
             <div>
               <p className="text-sm text-muted-foreground mb-2">Try asking:</p>
               <div className="flex flex-wrap gap-2">
