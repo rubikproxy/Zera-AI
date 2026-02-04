@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import { dailyCheckInQuestionsPrompt } from '@/ai/prompts/daily-check-in-questions.prompt';
+import { questionPrompt } from '@/ai/prompts/question.prompt';
 import {z} from 'genkit';
 
 const DailyCheckInInputSchema = z.object({
@@ -39,7 +39,7 @@ const prompt = ai.definePrompt({
   name: 'dailyCheckInPrompt',
   input: {schema: DailyCheckInInputSchema},
   output: {schema: DailyCheckInOutputSchema},
-  prompt: dailyCheckInQuestionsPrompt,
+  prompt: questionPrompt,
 });
 
 const dailyCheckInFlow = ai.defineFlow(
