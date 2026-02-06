@@ -976,8 +976,8 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
 
   return (
     <>
-      <div className="flex h-full flex-col w-full">
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <div className="flex h-full flex-col w-full bg-card">
+        <ScrollArea className="flex-1" ref={scrollAreaRef}>
           <div className="p-6 space-y-6">
             {messages.map((message) => {
               if (message.role === 'system') {
@@ -1064,7 +1064,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={getPlaceholderText()}
-              className="flex-1 resize-none rounded-xl border p-3 pr-24"
+              className="flex-1 resize-none rounded-xl border p-3 pr-24 bg-background"
               rows={1}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {

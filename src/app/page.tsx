@@ -100,14 +100,14 @@ export default function Home() {
           <div className="flex-1 overflow-auto py-2">{sidebarNav}</div>
         </div>
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col overflow-hidden">
         <Header
           language={language}
           setLanguage={setLanguage}
           sidebarNav={sidebarNav}
         />
-        <main className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex-1 rounded-lg border shadow-sm m-4 lg:m-6">
+        <main className="flex-1 overflow-hidden p-4 lg:p-6">
+          <div className="h-full w-full rounded-lg border bg-card shadow-sm overflow-hidden">
             <Chat language={language} ref={chatRef} />
           </div>
         </main>
