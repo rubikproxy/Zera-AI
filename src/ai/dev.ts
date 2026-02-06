@@ -12,4 +12,3 @@ import '@/ai/flows/mental-health-screening.ts';
 import '@/ai/flows/breastfeeding-support.ts';
 import '@/ai/flows/health-tips.ts';
 import '@/ai/flows/generate-suggestions.ts';
-import '@/ai/prompts/empathetic-response-fallback.prompt.ts';

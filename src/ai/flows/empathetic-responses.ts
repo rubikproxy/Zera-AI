@@ -9,7 +9,6 @@
  */
 
 import {ai} from '@/ai/genkit';
-import { mainPrompt } from '@/ai/prompts/main.prompt';
 import {z} from 'genkit';
 import { withGroqFallback } from '../groq-fallback';
 import { empatheticResponseFallbackPrompt } from '@/ai/prompts/empathetic-response-fallback.prompt';
@@ -37,7 +36,7 @@ const prompt = ai.definePrompt({
   name: 'empatheticResponsePrompt',
   input: {schema: EmpatheticResponseInputSchema},
   output: {schema: EmpatheticResponseOutputSchema},
-  prompt: mainPrompt,
+  prompt: empatheticResponseFallbackPrompt,
 });
 
 const promptWithFallback = withGroqFallback(
