@@ -1,3 +1,4 @@
+// groq-fallback.ts
 import type { z, ZodObject, ZodSchema } from 'zod';
 import Mustache from 'mustache';
 
@@ -40,8 +41,9 @@ export function withGroqFallback<I extends object, O>(
             return { output: fallbackOutput };
         } catch (fallbackError) {
             console.error(`Groq fallback for [${flowName}] also failed:`, fallbackError);
-            // Throw a more specific error if the fallback also fails.
-            throw new Error(`The fallback AI service failed for ${flowName} after the primary service was unavailable.`);
+            const msg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+            throw new Error(`The fallback AI service failed for ${flowName}: ${msg}`);
+
         }
       } else {
         // Re-throw any other unexpected errors.
@@ -77,7 +79,7 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
                 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
             },
             body: JSON.stringify({
-                model: 'llama3-70b-8192',
+                model: 'llama-3.3-70b-versatile',
                 messages: [
                     { "role": "system", "content": systemPrompt },
                     { "role": "user", "content": userPrompt }
@@ -127,9 +129,8 @@ export async function callGroq<O extends ZodSchema>(promptText: string, outputSc
 
         return validationResult.data;
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('Error during Groq fallback execution:', errorMessage);
-        // Throw a generic error to the client.
-        throw new Error(`The fallback AI service also failed. Please try again later.`);
+        // The original error is now propagated up to `withGroqFallback`.
+        // This preserves the specific error message (e.g., from an invalid API key, network issue, or bad response).
+        throw error;
     }
 }
