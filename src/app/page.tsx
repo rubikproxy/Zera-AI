@@ -7,7 +7,7 @@ import {
   Bell,
   ClipboardCheck,
   HeartPulse,
-  Home as HomeIcon,
+  HomeIcon,
   LifeBuoy,
   Sparkles,
   Sun,
@@ -106,8 +106,8 @@ export default function Home() {
           setLanguage={setLanguage}
           sidebarNav={sidebarNav}
         />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          <div className="flex flex-1 items-stretch justify-stretch rounded-lg border shadow-sm overflow-hidden">
+        <main className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 rounded-lg border shadow-sm m-4 lg:m-6">
             <Chat language={language} ref={chatRef} />
           </div>
         </main>

@@ -976,8 +976,8 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
 
   return (
     <>
-      <div className="flex h-full flex-col p-4 w-full">
-        <ScrollArea className="flex-1" ref={scrollAreaRef}>
+      <div className="flex h-full flex-col w-full">
+        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
           <div className="p-6 space-y-6">
             {messages.map((message) => {
               if (message.role === 'system') {
@@ -1032,7 +1032,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
             )}
           </div>
         </ScrollArea>
-        <div className="flex flex-col items-stretch gap-4 pt-4">
+        <div className="flex flex-col items-stretch gap-4 p-4 border-t">
           {!isLoading && suggestions.length > 0 && !isScreening && !isCheckingIn && (
             <div>
               <p className="text-sm text-muted-foreground mb-2">Try asking:</p>
