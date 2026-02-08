@@ -21,43 +21,65 @@ import type { HealthTipInput } from '@/ai/flows/health-tips';
 import { generateSuggestions } from '@/ai/flows/generate-suggestions';
 import type { GenerateSuggestionsInput } from '@/ai/flows/generate-suggestions';
 
+/**
+ * Checks if the required AI API keys are present in the environment.
+ * Throws an error if any key is missing.
+ */
+function checkApiKeys() {
+    if (!process.env.GEMINI_API_KEY) {
+        throw new Error("Configuration error: GEMINI_API_KEY is not set in the server environment. Please add it to your .env file.");
+    }
+    if (!process.env.GROQ_API_KEY) {
+        throw new Error("Configuration error: GROQ_API_KEY is not set in the server environment. The fallback AI service will not work. Please add it to your .env file.");
+    }
+}
 
 export async function getDailyCheckIn(input: DailyCheckInInput) {
+  checkApiKeys();
   return await dailyCheckIn(input);
 }
 
 export async function getSymptomUnderstanding(input: UnderstandSymptomsInput) {
+  checkApiKeys();
   return await understandSymptoms(input);
 }
 
 export async function getEmpatheticResponse(input: EmpatheticResponseInput) {
+  checkApiKeys();
   return await generateEmpatheticResponse(input);
 }
 
 export async function getEmergencyEscalation(input: EmergencyEscalationInput) {
+  checkApiKeys();
   return await emergencyEscalation(input);
 }
 
 export async function getPersonalizedAdvice(input: PersonalizedAdviceInput) {
+  checkApiKeys();
   return await personalizedAdvice(input);
 }
 
 export async function getWoundAnalysis(input: WoundAnalysisInput) {
+  checkApiKeys();
   return await analyzeWound(input);
 }
 
 export async function getEPDSAssessment(input: EPDSScoringInput) {
+    // This action does not call an AI, so no API key check is needed.
     return await getEpdsAssessment(input);
 }
 
 export async function getBreastfeedingSupportAction(input: BreastfeedingSupportInput) {
+    checkApiKeys();
     return await getBreastfeedingSupport(input);
 }
 
 export async function getHealthTipAction(input: HealthTipInput) {
+    checkApiKeys();
     return await getHealthTip(input);
 }
 
 export async function getSuggestions(input: GenerateSuggestionsInput) {
+    checkApiKeys();
     return await generateSuggestions(input);
 }
