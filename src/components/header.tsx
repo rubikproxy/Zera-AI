@@ -1,11 +1,5 @@
 import { Button } from './ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from './ui/dropdown-menu';
-import { Languages, Menu, LifeBuoy } from 'lucide-react';
+import { Menu, LifeBuoy } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -14,12 +8,10 @@ import {
 } from './ui/sheet';
 
 interface HeaderProps {
-  language: string;
-  setLanguage: (language: string) => void;
   sidebarNav: React.ReactNode;
 }
 
-export function Header({ language, setLanguage, sidebarNav }: HeaderProps) {
+export function Header({ sidebarNav }: HeaderProps) {
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
       <Sheet>
@@ -46,25 +38,6 @@ export function Header({ language, setLanguage, sidebarNav }: HeaderProps) {
       <div className="w-full flex-1">
         {/* Placeholder for maybe a search form */}
       </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline">
-            <Languages className="mr-2 h-5 w-5" />
-            {language}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setLanguage('English')}>
-            English
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setLanguage('Español')}>
-            Español
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setLanguage('Français')}>
-            Français
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </header>
   );
 }

@@ -19,7 +19,6 @@ const EmpatheticResponseInputSchema = z.object({
     .string()
     .optional()
     .describe('Additional context about the user or situation.'),
-  language: z.string().optional().describe('The language for the response (e.g., "English", "Español").'),
 });
 export type EmpatheticResponseInput = z.infer<typeof EmpatheticResponseInputSchema>;
 

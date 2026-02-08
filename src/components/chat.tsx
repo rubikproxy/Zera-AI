@@ -61,9 +61,7 @@ interface Message {
   content: React.ReactNode;
 }
 
-interface ChatProps {
-  language: string;
-}
+interface ChatProps {}
 
 export interface ChatHandle {
   handleGetHealthTip: () => void;
@@ -291,7 +289,7 @@ const PersonalizedAdviceResult = ({
   );
 };
 
-export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
+export const Chat = forwardRef<ChatHandle, ChatProps>((props, ref) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -338,7 +336,6 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
         const empatheticResponse = await getEmpatheticResponse({
           userInput: 'Hi, introduce yourself as Zera, an AI health assistant for postpartum care.',
           context: 'This is the very beginning of the conversation. Be warm and welcoming, and ask how the user is feeling.',
-          language: language,
         });
 
         setMessages([
@@ -350,17 +347,12 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
         ]);
       } catch (error: any) {
         console.error('Error getting initial greeting:', error);
-        const fallbackGreeting = {
-            English: "Hello! I'm Zera, your postpartum health assistant. I'm here to support you during your postpartum journey. How are you feeling today?",
-            Español: "¡Hola! Soy Zera, tu asistente de salud posparto. Estoy aquí para apoyarte durante tu viaje posparto. ¿Cómo te sientes hoy?",
-            Français: "Bonjour ! Je suis Zera, votre assistante de santé post-partum. Je suis là pour vous accompagner pendant votre parcours postpartum. Comment vous sentez-vous aujourd'hui ?"
-        };
-        type LanguageKey = keyof typeof fallbackGreeting;
+        const fallbackGreeting = "Hello! I'm Zera, your postpartum health assistant. I'm here to support you during your postpartum journey. How are you feeling today?";
         setMessages([
           {
             id: 'init-error',
             role: 'assistant',
-            content: fallbackGreeting[language as LanguageKey] || fallbackGreeting.English,
+            content: fallbackGreeting,
           },
         ]);
         toast({
@@ -374,7 +366,7 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
     };
 
     getInitialGreeting();
-  }, [language, toast]);
+  }, [toast]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -472,7 +464,6 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
         const empatheticResponse = await getEmpatheticResponse({
           userInput: 'I just finished my daily check-in.',
           context: `Here are my answers to the daily check-in questions:\n${checkinSummary}`,
-          language: language,
         });
 
         setMessages((prev) => [
@@ -574,7 +565,6 @@ export const Chat = forwardRef<ChatHandle, ChatProps>(({ language }, ref) => {
           const empatheticResponse = await getEmpatheticResponse({
             userInput: messageText,
             context: conversationHistory,
-            language: language,
           });
           setMessages((prev) => [
             ...prev,

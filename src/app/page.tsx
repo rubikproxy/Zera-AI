@@ -2,9 +2,7 @@
 
 import { Chat, type ChatHandle } from '@/components/chat';
 import { Header } from '@/components/header';
-import { Button } from '@/components/ui/button';
 import {
-  Bell,
   ClipboardCheck,
   HeartPulse,
   HomeIcon,
@@ -12,10 +10,9 @@ import {
   Sparkles,
   Sun,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 
 export default function Home() {
-  const [language, setLanguage] = useState('English');
   const chatRef = useRef<ChatHandle>(null);
 
   // For simplicity, new chat reloads the page.
@@ -92,23 +89,15 @@ export default function Home() {
               <LifeBuoy className="h-6 w-6 text-primary" />
               <span className="">AI Zera</span>
             </a>
-            <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
-              <Bell className="h-4 w-4" />
-              <span className="sr-only">Toggle notifications</span>
-            </Button>
           </div>
           <div className="flex-1 overflow-auto py-2">{sidebarNav}</div>
         </div>
       </div>
       <div className="flex flex-col overflow-hidden">
-        <Header
-          language={language}
-          setLanguage={setLanguage}
-          sidebarNav={sidebarNav}
-        />
+        <Header sidebarNav={sidebarNav} />
         <main className="flex-1 overflow-hidden p-4 lg:p-6">
           <div className="h-full w-full rounded-lg border bg-card shadow-sm overflow-hidden">
-            <Chat language={language} ref={chatRef} />
+            <Chat ref={chatRef} />
           </div>
         </main>
       </div>
