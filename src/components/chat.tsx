@@ -6,7 +6,6 @@ import {
   getEmergencyEscalation,
   getPersonalizedAdvice,
   getSymptomUnderstanding,
-  getWoundAnalysis,
   getEPDSAssessment,
   getBreastfeedingSupportAction,
   getHealthTipAction,
@@ -22,8 +21,6 @@ import {
   ClipboardCheck,
   CornerDownLeft,
   Loader,
-  Paperclip,
-  Scan,
   Sparkles,
   Sun,
   HeartPulse,
@@ -33,7 +30,6 @@ import {
   BrainCircuit,
   User,
 } from 'lucide-react';
-import Image from 'next/image';
 import {
   forwardRef,
   useEffect,
@@ -43,7 +39,6 @@ import {
 } from 'react';
 import { EmergencyDialog } from './emergency-dialog';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import type { WoundAnalysisOutput } from '@/ai/flows/wound-analysis';
 import { epdsQuestions, type EpdsQuestion } from '@/lib/epds-questions';
 import type { BreastfeedingSupportOutput } from '@/ai/flows/breastfeeding-support';
 import type { HealthTipOutput } from '@/ai/flows/health-tips';
@@ -69,81 +64,6 @@ export interface ChatHandle {
   handleDailyCheckIn: () => void;
   handleGetAdvice: () => void;
 }
-
-const WoundAnalysisResult = ({
-  analysis,
-}: {
-  analysis: WoundAnalysisOutput;
-}) => {
-  const getAssessmentClass = (assessment: string) => {
-    switch (assessment) {
-      case 'Requires Medical Attention':
-        return 'text-destructive font-bold';
-      case 'Needs Monitoring':
-        return 'text-yellow-600 font-bold';
-      default:
-        return 'text-green-600 font-bold';
-    }
-  };
-
-  return (
-    <div className="space-y-3">
-      <h3 className="font-headline text-lg font-semibold flex items-center gap-2">
-        <Scan className="text-primary h-5 w-5" /> Wound Analysis
-      </h3>
-      <div className="border-t border-border pt-2">
-        <p>
-          <strong>Overall Assessment:</strong>{' '}
-          <span className={getAssessmentClass(analysis.overallAssessment)}>
-            {analysis.overallAssessment}
-          </span>
-        </p>
-        <p>
-          <strong>Healing Stage:</strong> {analysis.healingStage}
-        </p>
-        <div className="mt-2 space-y-1">
-          <p className="font-semibold">Infection Signs:</p>
-          <ul className="list-disc list-inside pl-2 text-sm space-y-1">
-            <li>
-              <strong>Redness:</strong>{' '}
-              {analysis.infectionSigns.redness.present ? (
-                <span className="font-semibold text-destructive">
-                  Yes (Severity: {analysis.infectionSigns.redness.severity}/5)
-                </span>
-              ) : (
-                'No'
-              )}
-            </li>
-            <li>
-              <strong>Swelling:</strong>{' '}
-              {analysis.infectionSigns.swelling.present ? (
-                <span className="font-semibold text-destructive">
-                  Yes (Severity: {analysis.infectionSigns.swelling.severity}/5)
-                </span>
-              ) : (
-                'No'
-              )}
-            </li>
-            <li>
-              <strong>Discharge:</strong>{' '}
-              {analysis.infectionSigns.discharge.present ? (
-                <span className="font-semibold text-destructive">
-                  Yes (Type: {analysis.infectionSigns.discharge.type})
-                </span>
-              ) : (
-                'No'
-              )}
-            </li>
-          </ul>
-        </div>
-        <div className="mt-2">
-          <p className="font-semibold">Recommendations:</p>
-          <p className="text-sm">{analysis.recommendations}</p>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const EpdsQuestionDisplay = ({
   question,
@@ -318,7 +238,6 @@ export const Chat = forwardRef<ChatHandle, ChatProps>((props, ref) => {
   const [suggestions, setSuggestions] = useState<string[]>(initialSuggestions);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useImperativeHandle(ref, () => ({
@@ -612,89 +531,6 @@ export const Chat = forwardRef<ChatHandle, ChatProps>((props, ref) => {
   const handleSuggestionClick = async (suggestion: string) => {
     if (isLoading || isScreening || isCheckingIn) return;
     await submitMessage(suggestion);
-  };
-
-  const handleAttachmentClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || isLoading) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid File Type',
-        description: 'Please upload an image file (e.g., JPG, PNG).',
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      const photoDataUri = loadEvent.target?.result as string;
-      if (photoDataUri) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            role: 'user',
-            content: (
-              <div className="p-2">
-                <p className="mb-2 text-sm italic">
-                  Analyzing wound image...
-                </p>
-                <Image
-                  src={photoDataUri}
-                  alt="Uploaded wound"
-                  width={300}
-                  height={200}
-                  className="rounded-lg"
-                />
-              </div>
-            ),
-          },
-        ]);
-
-        setIsLoading(true);
-        setSuggestions([]);
-
-        getWoundAnalysis({ photoDataUri, daysPostSurgery: 7 /* Example value */ })
-          .then((analysis) => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `${Date.now()}-analysis`,
-                role: 'assistant',
-                content: <WoundAnalysisResult analysis={analysis} />,
-              },
-            ]);
-          })
-          .catch((error) => {
-            console.error('Wound analysis error:', error);
-            toast({
-              variant: 'destructive',
-              title: 'Analysis Failed',
-              description: 'Could not analyze the image. Please try again.',
-            });
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `${Date.now()}-error`,
-                role: 'assistant',
-                content: 'Sorry, I could not analyze the image.',
-              },
-            ]);
-          })
-          .finally(() => {
-            setIsLoading(false);
-          });
-      }
-    };
-    reader.readAsDataURL(file);
-
-    e.target.value = '';
   };
 
   const handleGetAdvice = async () => {
@@ -1041,20 +877,12 @@ export const Chat = forwardRef<ChatHandle, ChatProps>((props, ref) => {
               </div>
             </div>
           )}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            className="hidden"
-            accept="image/*"
-            disabled={isLoading || isScreening || isCheckingIn}
-          />
           <form onSubmit={handleSendMessage} className="relative w-full">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={getPlaceholderText()}
-              className="flex-1 resize-none rounded-xl border p-3 pr-24 bg-background"
+              className="flex-1 resize-none rounded-xl border p-3 pr-16 bg-background"
               rows={1}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -1073,16 +901,6 @@ export const Chat = forwardRef<ChatHandle, ChatProps>((props, ref) => {
               >
                 <CornerDownLeft className="h-5 w-5" />
                 <span className="sr-only">Send</span>
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={isLoading || isScreening || isCheckingIn}
-                onClick={handleAttachmentClick}
-              >
-                <Paperclip className="h-5 w-5" />
-                <span className="sr-only">Attach file</span>
               </Button>
             </div>
           </form>

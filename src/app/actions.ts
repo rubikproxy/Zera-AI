@@ -10,8 +10,6 @@ import { personalizedAdvice } from '@/ai/flows/personalized-advice';
 import type { PersonalizedAdviceInput } from '@/ai/flows/personalized-advice';
 import { understandSymptoms } from '@/ai/flows/symptom-understanding';
 import type { UnderstandSymptomsInput } from '@/ai/flows/symptom-understanding';
-import { analyzeWound } from '@/ai/flows/wound-analysis';
-import type { WoundAnalysisInput } from '@/ai/flows/wound-analysis';
 import { getEpdsAssessment } from '@/ai/flows/mental-health-screening';
 import type { EPDSScoringInput } from '@/ai/flows/mental-health-screening';
 import { getBreastfeedingSupport } from '@/ai/flows/breastfeeding-support';
@@ -57,11 +55,6 @@ export async function getEmergencyEscalation(input: EmergencyEscalationInput) {
 export async function getPersonalizedAdvice(input: PersonalizedAdviceInput) {
   checkApiKeys();
   return await personalizedAdvice(input);
-}
-
-export async function getWoundAnalysis(input: WoundAnalysisInput) {
-  checkApiKeys();
-  return await analyzeWound(input);
 }
 
 export async function getEPDSAssessment(input: EPDSScoringInput) {
