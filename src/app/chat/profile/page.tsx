@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { UserCircle, ShieldCheck, Database, Save, ArrowRight } from 'lucide-react';
+import { UserCircle, Save } from 'lucide-react';
 
 const PROFILE_KEY = 'zera_user_profile';
 
@@ -50,8 +50,8 @@ export default function ProfilePage() {
   return (
     <div className="max-w-4xl mx-auto py-12 px-4">
       <div className="flex flex-col gap-2 mb-10 text-center">
-        <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">Health <span className="text-primary italic">Identity Node</span></h1>
-        <p className="text-muted-foreground text-lg">Manage your identity profile and clinical context.</p>
+        <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">Health <span className="text-primary italic">Identity Profile</span></h1>
+        <p className="text-muted-foreground text-lg">Manage your identity and recovery context.</p>
       </div>
 
       <Card className="border-none glass shadow-2xl rounded-[40px] overflow-hidden">
@@ -120,7 +120,7 @@ export default function ProfilePage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Days since baby was born</Label>
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">How many days has it been since your baby was born?</Label>
                 <Input 
                   type="number"
                   value={profile.daysSinceBirth} 

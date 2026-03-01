@@ -14,13 +14,7 @@ import {
   CornerDownLeft,
   Loader,
   User,
-  ShieldCheck,
-  Zap,
   UserCircle,
-  Save,
-  Lock,
-  Mic,
-  Smile
 } from 'lucide-react';
 import {
   forwardRef,
@@ -38,7 +32,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -81,15 +74,22 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
 
   useEffect(() => {
     setMounted(true);
-    const profile = localStorage.getItem(PROFILE_KEY);
-    if (!profile) {
+    const savedProfile = localStorage.getItem(PROFILE_KEY);
+    if (!savedProfile) {
       setShowProfileDialog(true);
+    } else {
+      try {
+        setProfileForm(JSON.parse(savedProfile));
+      } catch (e) {
+        console.error('Failed to parse profile');
+        setShowProfileDialog(true);
+      }
     }
 
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const savedHistory = localStorage.getItem(STORAGE_KEY);
+    if (savedHistory) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(savedHistory);
         const validMessages = (parsed as Message[]).filter(m => 
           m && typeof m.content === 'string' && m.id && m.role
         );
@@ -114,7 +114,10 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     }
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profileForm));
     setShowProfileDialog(false);
-    getInitialGreeting();
+    
+    if (messages.length === 0) {
+      getInitialGreeting();
+    }
   };
 
   const getInitialGreeting = async () => {
@@ -273,13 +276,13 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">How you gave birth?</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">How did you give birth?</Label>
                 <Select value={profileForm.birthMethod} onValueChange={v => setProfileForm(p => ({...p, birthMethod: v}))}>
                   <SelectTrigger className="h-10 rounded-xl bg-secondary/20 border-none shadow-inner">
                     <SelectValue placeholder="Method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="vaginal">Normal</SelectItem>
+                    <SelectItem value="vaginal">Natural</SelectItem>
                     <SelectItem value="c-section">C-Section</SelectItem>
                   </SelectContent>
                 </Select>
@@ -287,7 +290,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Days since baby was born?</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">How many days has it been since your baby was born?</Label>
               <Input 
                 type="number"
                 placeholder="E.g., 14"

@@ -25,5 +25,27 @@ TASK:
 
 3. Assign Radar Scores (1-10) for: Physical, Nutrition, Exercise, Mental.
 
+You MUST respond with a valid JSON object following this EXACT structure:
+{
+  "recoveryAdvice": "...",
+  "nutritionAdvice": "...",
+  "exerciseAdvice": "...",
+  "mentalWellbeingAdvice": "...",
+  "metrics": {
+    "heartRate": 72,
+    "bloodPressure": "120/80",
+    "sleepHours": 6,
+    "steps": 3000,
+    "stressLevel": "No Stress",
+    "nutritionStatus": "Good"
+  },
+  "scores": {
+    "physical": 7,
+    "nutrition": 8,
+    "exercise": 5,
+    "mental": 6
+  }
+}
+
 Be precise, empathetic, and scientific. Address the user by name.
 `;

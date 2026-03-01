@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Heart,
@@ -65,11 +65,12 @@ interface HealthResult {
 }
 
 const RadarAnalysis = ({ scores }: { scores: HealthResult['scores'] }) => {
+  if (!scores) return null;
   const data = [
-    { subject: 'Physical', A: scores.physical, fullMark: 10 },
-    { subject: 'Nutrition', A: scores.nutrition, fullMark: 10 },
-    { subject: 'Exercise', A: scores.exercise, fullMark: 10 },
-    { subject: 'Mental', A: scores.mental, fullMark: 10 },
+    { subject: 'Physical', A: scores.physical || 0, fullMark: 10 },
+    { subject: 'Nutrition', A: scores.nutrition || 0, fullMark: 10 },
+    { subject: 'Exercise', A: scores.exercise || 0, fullMark: 10 },
+    { subject: 'Mental', A: scores.mental || 0, fullMark: 10 },
   ];
 
   return (
@@ -98,10 +99,12 @@ const RadarAnalysis = ({ scores }: { scores: HealthResult['scores'] }) => {
 };
 
 const HistoryTrend = ({ history }: { history: any[] }) => {
+  if (!history || history.length === 0) return <div className="h-[200px] flex items-center justify-center text-muted-foreground text-xs italic">Not enough historical data yet.</div>;
+  
   const data = history.slice(0, 7).reverse().map((entry, idx) => ({
     name: new Date(entry.timestamp).toLocaleDateString('en-US', { weekday: 'short' }),
-    physical: entry.scores.physical,
-    mental: entry.scores.mental,
+    physical: entry.scores?.physical || 0,
+    mental: entry.scores?.mental || 0,
   }));
 
   return (
@@ -156,7 +159,7 @@ export default function ResultsPage() {
       <div className="flex h-full items-center justify-center">
         <div className="text-center space-y-4">
           <Activity className="h-12 w-12 text-primary animate-pulse mx-auto" />
-          <h1 className="text-2xl font-headline font-semibold">Generating Monitoring Dashboard...</h1>
+          <h1 className="text-2xl font-headline font-semibold">Synchronizing Dashboard...</h1>
           <Button onClick={() => router.push('/chat/advice')} variant="outline">
             Start Daily Check-in
           </Button>
@@ -174,7 +177,7 @@ export default function ResultsPage() {
         </Button>
         <div className="flex items-center gap-3">
           <Badge variant="outline" className="px-3 py-0.5 rounded-full border-primary/20 text-primary bg-primary/5 text-[9px] font-bold uppercase tracking-widest">
-            AI Twin Active
+            Digital Twin Active
           </Badge>
           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
         </div>
@@ -186,22 +189,22 @@ export default function ResultsPage() {
            <Card className="border-none glass shadow-sm p-5 text-center flex flex-col items-center gap-2">
               <div className="p-2 bg-red-50 rounded-xl"><Heart className="h-5 w-5 text-red-500" /></div>
               <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Heart Rate</span>
-              <div className="text-2xl font-bold">{result.metrics.heartRate}<span className="text-xs ml-1 font-medium text-muted-foreground">bpm</span></div>
+              <div className="text-2xl font-bold">{result.metrics?.heartRate || '--'}<span className="text-xs ml-1 font-medium text-muted-foreground">bpm</span></div>
            </Card>
            <Card className="border-none glass shadow-sm p-5 text-center flex flex-col items-center gap-2">
               <div className="p-2 bg-indigo-50 rounded-xl"><Moon className="h-5 w-5 text-indigo-500" /></div>
               <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Sleep</span>
-              <div className="text-2xl font-bold">{result.metrics.sleepHours}<span className="text-xs ml-1 font-medium text-muted-foreground">hrs</span></div>
+              <div className="text-2xl font-bold">{result.metrics?.sleepHours || '--'}<span className="text-xs ml-1 font-medium text-muted-foreground">hrs</span></div>
            </Card>
            <Card className="border-none glass shadow-sm p-5 text-center flex flex-col items-center gap-2">
               <div className="p-2 bg-green-50 rounded-xl"><Footprints className="h-5 w-5 text-green-500" /></div>
               <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Steps</span>
-              <div className="text-2xl font-bold">{(result.metrics.steps / 1000).toFixed(1)}<span className="text-xs ml-1 font-medium text-muted-foreground">k</span></div>
+              <div className="text-2xl font-bold">{result.metrics?.steps ? (result.metrics.steps / 1000).toFixed(1) : '--'}<span className="text-xs ml-1 font-medium text-muted-foreground">k</span></div>
            </Card>
            <Card className="border-none glass shadow-sm p-5 text-center flex flex-col items-center gap-2">
               <div className="p-2 bg-blue-50 rounded-xl"><Droplets className="h-5 w-5 text-blue-500" /></div>
               <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">BP</span>
-              <div className="text-2xl font-bold">{result.metrics.bloodPressure}</div>
+              <div className="text-2xl font-bold">{result.metrics?.bloodPressure || '--/--'}</div>
            </Card>
         </div>
 
@@ -211,13 +214,13 @@ export default function ResultsPage() {
             <CardHeader className="pb-2">
                <CardTitle className="text-base font-headline flex items-center gap-2">
                  <Zap className="h-4 w-4 text-primary" />
-                 Stress Level Prediction
+                 Stress Prediction
                </CardTitle>
             </CardHeader>
             <CardContent className="text-center py-6">
-               <div className="text-5xl mb-4">{result.metrics.stressLevel === 'Stress' ? '😔' : '😊'}</div>
-               <div className="text-2xl font-bold text-foreground">{result.metrics.stressLevel}</div>
-               <Badge className={result.metrics.stressLevel === 'Stress' ? 'bg-orange-500 mt-2' : 'bg-green-500 mt-2'}>
+               <div className="text-5xl mb-4">{result.metrics?.stressLevel === 'Stress' ? '😔' : '😊'}</div>
+               <div className="text-2xl font-bold text-foreground">{result.metrics?.stressLevel || 'Monitoring...'}</div>
+               <Badge className={result.metrics?.stressLevel === 'Stress' ? 'bg-orange-500 mt-2' : 'bg-green-500 mt-2'}>
                  System Stable
                </Badge>
             </CardContent>
@@ -263,7 +266,7 @@ export default function ResultsPage() {
              <Card className="border-none glass shadow-sm p-5">
                 <div className="flex items-center gap-3 mb-3">
                    <div className="bg-primary/10 p-2 rounded-lg"><Clock className="h-4 w-4 text-primary" /></div>
-                   <h4 className="font-headline font-bold text-sm">Suggested Plan</h4>
+                   <h4 className="font-headline font-bold text-sm">Movement Targets</h4>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">{result.exerciseAdvice}</p>
              </Card>
