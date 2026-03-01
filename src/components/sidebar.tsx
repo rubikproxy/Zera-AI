@@ -1,8 +1,7 @@
 'use client';
 
 import { 
-  ClipboardCheck, 
-  HeartPulse, 
+  Activity,
   Home, 
   LifeBuoy, 
   Sparkles, 
@@ -30,18 +29,16 @@ export function Sidebar() {
     if (pathname !== '/chat') {
       router.push(`/chat?action=${action}`);
     } else {
-      // Dispatch custom event for the chat component to listen to
       window.dispatchEvent(new CustomEvent('zera-action', { detail: action }));
     }
   };
 
   const navItems = [
     { label: 'Home', icon: Home, href: '/' },
-    { label: 'New Chat', icon: PlusCircle, onClick: handleNewChat },
-    { label: 'Health Tips', icon: ClipboardCheck, onClick: () => handleAction('tip') },
-    { label: 'Mental Health Screening', icon: HeartPulse, onClick: () => handleAction('screening') },
+    { label: 'Chat Dashboard', icon: PlusCircle, onClick: handleNewChat },
     { label: 'Daily Check-in', icon: Sun, onClick: () => handleAction('check-in') },
-    { label: 'Personalized Advice', icon: Sparkles, href: '/chat/advice' },
+    { label: 'Health Monitoring', icon: Activity, href: '/chat/advice' },
+    { label: 'Recovery Status', icon: Sparkles, href: '/chat/results' },
   ];
 
   return (
@@ -89,7 +86,7 @@ export function Sidebar() {
       </div>
       <div className="p-4 border-t">
         <div className="rounded-xl bg-primary/5 p-4 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-          Matrix Version 2.0.70
+          Monitoring Active • v2.1.0
         </div>
       </div>
     </div>
