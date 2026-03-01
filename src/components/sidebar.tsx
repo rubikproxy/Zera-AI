@@ -6,21 +6,24 @@ import {
   LifeBuoy, 
   Sparkles, 
   Sun, 
-  PlusCircle 
+  PlusCircle,
+  UserCircle,
+  BarChart3
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-const STORAGE_KEY = 'zera_chat_history_v2';
+const CHAT_STORAGE_KEY = 'zera_chat_history_v2';
+const PROFILE_STORAGE_KEY = 'zera_user_profile';
 
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
 
   const handleNewChat = () => {
-    if (confirm("Are you sure you want to start a new chat? This will clear your current local history.")) {
-      localStorage.removeItem(STORAGE_KEY);
+    if (confirm("Start a new session? This will clear current local dialogue but keep your profile.")) {
+      localStorage.removeItem(CHAT_STORAGE_KEY);
       window.location.href = '/chat';
     }
   };
@@ -35,10 +38,11 @@ export function Sidebar() {
 
   const navItems = [
     { label: 'Home', icon: Home, href: '/' },
-    { label: 'Chat Dashboard', icon: PlusCircle, onClick: handleNewChat },
+    { label: 'New Chat', icon: PlusCircle, onClick: handleNewChat },
     { label: 'Daily Check-in', icon: Sun, onClick: () => handleAction('check-in') },
-    { label: 'Health Monitoring', icon: Activity, href: '/chat/advice' },
-    { label: 'Recovery Status', icon: Sparkles, href: '/chat/results' },
+    { label: 'My Health Tracker', icon: Activity, href: '/chat/advice' },
+    { label: 'My Health Status', icon: BarChart3, href: '/chat/results' },
+    { label: 'My Profile', icon: UserCircle, href: '/chat/profile' },
   ];
 
   return (
@@ -46,11 +50,11 @@ export function Sidebar() {
       <div className="flex h-[60px] items-center border-b px-6">
         <Link href="/chat" className="flex items-center gap-2 font-semibold">
           <LifeBuoy className="h-6 w-6 text-primary" />
-          <span className="font-headline font-bold">AI Zera</span>
+          <span className="font-headline font-bold text-lg tracking-tight">AI Zera</span>
         </Link>
       </div>
-      <div className="flex-1 overflow-y-auto py-2">
-        <nav className="grid items-start px-4 text-sm font-medium gap-1">
+      <div className="flex-1 overflow-y-auto py-4">
+        <nav className="grid items-start px-4 text-sm font-medium gap-2">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
             const isActive = item.href === pathname;
@@ -61,12 +65,12 @@ export function Sidebar() {
                   key={idx}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
-                    isActive ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                    "flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 hover:bg-primary/5 hover:text-primary group",
+                    isActive ? "bg-primary/10 text-primary shadow-sm" : "text-muted-foreground"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
+                  <Icon className={cn("h-4 w-4 transition-transform group-hover:scale-110", isActive && "text-primary")} />
+                  <span className="font-semibold">{item.label}</span>
                 </Link>
               );
             }
@@ -75,18 +79,24 @@ export function Sidebar() {
               <button
                 key={idx}
                 onClick={item.onClick}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-left w-full"
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground transition-all duration-300 hover:bg-primary/5 hover:text-primary text-left w-full group"
               >
-                <Icon className="h-4 w-4" />
-                {item.label}
+                <Icon className="h-4 w-4 transition-transform group-hover:scale-110" />
+                <span className="font-semibold">{item.label}</span>
               </button>
             );
           })}
         </nav>
       </div>
-      <div className="p-4 border-t">
-        <div className="rounded-xl bg-primary/5 p-4 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-          Monitoring Active • v2.1.0
+      <div className="p-6 border-t bg-secondary/10">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-primary/70">
+            <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            Local Node: Active
+          </div>
+          <div className="text-[9px] text-muted-foreground leading-relaxed">
+            All conversations and biometrics are stored locally on this device via IndexedDB/LocalStorage.
+          </div>
         </div>
       </div>
     </div>

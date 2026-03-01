@@ -16,6 +16,8 @@ import {
   User,
   ShieldCheck,
   Zap,
+  ArrowRight,
+  UserCircle
 } from 'lucide-react';
 import {
   forwardRef,
@@ -24,10 +26,12 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useRouter } from 'next/navigation';
 import { EmergencyDialog } from './emergency-dialog';
 import { Avatar, AvatarFallback } from './ui/avatar';
 
 const STORAGE_KEY = 'zera_chat_history_v2';
+const PROFILE_KEY = 'zera_user_profile';
 
 interface Message {
   id: string;
@@ -46,11 +50,21 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEmergency, setIsEmergency] = useState(false);
   const [escalationMessage, setEscalationMessage] = useState('');
+  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
+    // Check for profile first
+    const profile = localStorage.getItem(PROFILE_KEY);
+    if (!profile) {
+      setHasProfile(false);
+    } else {
+      setHasProfile(true);
+    }
+
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
@@ -82,11 +96,11 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     try {
       const resp = await getEmpatheticResponse({
         userInput: 'Introduce Zera, the futuristic AI postpartum health monitoring assistant.',
-        context: 'First interaction. Mention that monitoring is powered by Multimodal Deep Learning.',
+        context: 'First interaction. Mention that monitoring is powered by Multimodal Deep Learning and Federated Learning principles.',
       });
       setMessages([{ id: 'init', role: 'assistant', content: resp.response }]);
     } catch (e) {
-      setMessages([{ id: 'err', role: 'assistant', content: 'I am Zera, your monitoring assistant. I analyze our conversations to synthesize your recovery status.' }]);
+      setMessages([{ id: 'err', role: 'assistant', content: 'I am Zera, your monitoring assistant. I analyze our conversations to synthesize your recovery status locally.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +141,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         setEscalationMessage(esc.escalationMessage);
         setIsEmergency(true);
       } else {
-        const resp = await getEmpatheticResponse({ userInput: text, context: 'Advanced Monitoring Mode active.' });
+        const resp = await getEmpatheticResponse({ userInput: text, context: 'Advanced Local Monitoring Mode active.' });
         setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: resp.response }]);
       }
     } catch (e: any) {
@@ -137,17 +151,35 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     }
   };
 
+  if (hasProfile === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-secondary/10 rounded-[40px] border-2 border-dashed border-primary/20">
+        <div className="bg-primary/10 p-6 rounded-full mb-6">
+          <UserCircle className="h-12 w-12 text-primary" />
+        </div>
+        <h2 className="text-2xl font-headline font-bold mb-4">Initialize Health Identity</h2>
+        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+          To begin monitoring, Zera needs a local context node. Create your profile to enable sentiment-based clinical inference.
+        </p>
+        <Button onClick={() => router.push('/chat/profile')} size="lg" className="rounded-full h-14 px-8 font-bold gap-3 shadow-xl">
+          Create Local Profile
+          <ArrowRight className="h-5 w-5" />
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex h-full flex-col w-full bg-background border rounded-[30px] shadow-2xl overflow-hidden glass">
         <div className="px-6 py-4 border-b bg-secondary/20 flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-3 w-3 text-primary" />
-            Federated Encryption Active
+            Federated Local Persistence
           </div>
           <div className="flex items-center gap-2">
             <Zap className="h-3 w-3 text-primary" />
-            Gemini Deep Synthesis
+            Gemini Multimodal Synthesis
           </div>
         </div>
 

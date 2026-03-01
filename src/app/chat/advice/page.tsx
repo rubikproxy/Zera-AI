@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,16 +9,34 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { getPersonalizedAdvice } from '@/app/actions';
-import { Activity, Loader, ChevronLeft, ShieldCheck } from 'lucide-react';
+import { Activity, Loader, ChevronLeft, ShieldCheck, Database } from 'lucide-react';
 
 const LATEST_RESULT_KEY = 'zera_latest_result';
 const CHAT_STORAGE_KEY = 'zera_chat_history_v2';
+const PROFILE_KEY = 'zera_user_profile';
 
 export default function AdvicePage() {
   const [formData, setFormData] = useState({ name: '', age: '', health: '' });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    // Pre-fill from local profile
+    const savedProfile = localStorage.getItem(PROFILE_KEY);
+    if (savedProfile) {
+      try {
+        const profile = JSON.parse(savedProfile);
+        setFormData(prev => ({
+          ...prev,
+          name: profile.name || '',
+          age: profile.age || '',
+        }));
+      } catch (e) {
+        console.error('Failed to load profile for tracker');
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,14 +47,13 @@ export default function AdvicePage() {
 
     setIsLoading(true);
     try {
-      // Get conversation summary to feed into the multimodal monitoring
       const historyRaw = localStorage.getItem(CHAT_STORAGE_KEY);
       const historyText = historyRaw ? JSON.parse(historyRaw).map((m: any) => `${m.role}: ${m.content}`).join('\n') : '';
       
       const result = await getPersonalizedAdvice({
         name: formData.name,
         age: parseInt(formData.age) || 25,
-        healthData: `USER FORM: ${formData.health}\n\nRECENT CHAT HISTORY:\n${historyText}`,
+        healthData: `USER TRACKER INPUT: ${formData.health}\n\nLOCAL CONVERSATION HISTORY:\n${historyText}`,
         daysPostpartum: 14,
       });
 
@@ -56,10 +73,10 @@ export default function AdvicePage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-12">
+    <div className="max-w-4xl mx-auto py-12 px-4">
       <Button variant="ghost" onClick={() => router.back()} className="mb-8 gap-2 text-muted-foreground hover:text-foreground">
         <ChevronLeft className="h-4 w-4" />
-        Back to Dashboard
+        Back to Console
       </Button>
 
       <Card className="border-none glass shadow-2xl rounded-[40px] overflow-hidden">
@@ -69,19 +86,19 @@ export default function AdvicePage() {
               <Activity className="h-10 w-10 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-4xl font-headline font-bold text-foreground">Health Monitoring Portal</CardTitle>
+          <CardTitle className="text-4xl font-headline font-bold text-foreground">Health <span className="text-primary">Tracker</span></CardTitle>
           <CardDescription className="text-muted-foreground text-lg px-8 mt-2">
-            Zera synthesizes your health status by combining clinical input with conversation-based monitoring.
+            Multimodal Data Acquisition Portal. Updates committed to local store.
           </CardDescription>
         </CardHeader>
         <CardContent className="px-10 pb-12">
           <form onSubmit={handleSubmit} className="space-y-8 pt-10">
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <Label htmlFor="name" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Full Name</Label>
+                <Label htmlFor="name" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Identity Node</Label>
                 <Input 
                   id="name" 
-                  placeholder="E.g., Dr. Sarah" 
+                  placeholder="Patient Name" 
                   value={formData.name} 
                   onChange={e => setFormData(p => ({...p, name: e.target.value}))} 
                   className="h-14 rounded-2xl bg-secondary/30 border-none shadow-inner text-lg px-6" 
@@ -92,7 +109,7 @@ export default function AdvicePage() {
                 <Input 
                   id="age" 
                   type="number" 
-                  placeholder="28" 
+                  placeholder="Age" 
                   value={formData.age} 
                   onChange={e => setFormData(p => ({...p, age: e.target.value}))} 
                   className="h-14 rounded-2xl bg-secondary/30 border-none shadow-inner text-lg px-6" 
@@ -101,14 +118,20 @@ export default function AdvicePage() {
             </div>
             
             <div className="space-y-3">
-              <Label htmlFor="health" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Physical & Clinical Updates</Label>
-              <Textarea 
-                id="health" 
-                value={formData.health} 
-                onChange={e => setFormData(p => ({...p, health: e.target.value}))} 
-                className="min-h-[180px] rounded-[30px] bg-secondary/30 border-none shadow-inner p-6 text-lg resize-none leading-relaxed" 
-                placeholder="Briefly describe your physical comfort, breastfeeding status, energy levels, or any medical concerns since delivery..." 
-              />
+              <Label htmlFor="health" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Clinical Update Details</Label>
+              <div className="relative">
+                <Textarea 
+                  id="health" 
+                  value={formData.health} 
+                  onChange={e => setFormData(p => ({...p, health: e.target.value}))} 
+                  className="min-h-[180px] rounded-[30px] bg-secondary/30 border-none shadow-inner p-6 text-lg resize-none leading-relaxed" 
+                  placeholder="Describe your recovery signals: energy, discomfort, bleeding trends, or breastfeeding progress..." 
+                />
+                <div className="absolute bottom-4 right-6 flex items-center gap-2 text-[9px] uppercase font-bold text-primary/40">
+                  <Database className="h-3 w-3" />
+                  Auto-syncing to IndexedDB
+                </div>
+              </div>
             </div>
 
             <Button 
@@ -119,22 +142,22 @@ export default function AdvicePage() {
               {isLoading ? (
                 <>
                   <Loader className="mr-3 h-6 w-6 animate-spin" />
-                  Synthesizing Monitoring Matrix...
+                  Synthesizing Biometric Matrix...
                 </>
               ) : (
-                'Generate Health Status Report'
+                'Generate Real-Time Health Status'
               )}
             </Button>
           </form>
 
-          <div className="mt-12 flex items-center justify-center gap-6 opacity-40">
+          <div className="mt-12 flex items-center justify-center gap-8 opacity-40">
              <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest">
-                <ShieldCheck className="h-3 w-3" />
-                Private Data Encryption
+                <ShieldCheck className="h-3 w-3 text-primary" />
+                End-to-End Encryption
              </div>
              <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest">
-                <Activity className="h-3 w-3" />
-                Real-time Sync Active
+                <Activity className="h-3 w-3 text-primary" />
+                Multimodal Synthesis
              </div>
           </div>
         </CardContent>
