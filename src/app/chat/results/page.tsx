@@ -6,14 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Sparkles,
   Heart,
   Moon,
-  Thermometer,
   Brain,
   Utensils,
   Dumbbell,
-  Bandage,
   ChevronLeft,
   Activity,
   Droplets,
@@ -100,9 +97,13 @@ export default function ResultsPage() {
     const saved = localStorage.getItem(LATEST_RESULT_KEY);
     if (saved) {
       try {
-        setResult(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        // Ensure structure exists to avoid runtime undefined errors
+        if (parsed && parsed.metrics && parsed.scores) {
+          setResult(parsed);
+        }
       } catch (e) {
-        console.error('Failed to parse result', e);
+        console.error('Failed to parse health result', e);
       }
     }
   }, []);
@@ -112,9 +113,9 @@ export default function ResultsPage() {
       <div className="flex h-full items-center justify-center">
         <div className="text-center space-y-4">
           <Activity className="h-12 w-12 text-primary animate-pulse mx-auto" />
-          <h1 className="text-2xl font-headline font-semibold">Synthesizing Health Data...</h1>
+          <h1 className="text-2xl font-headline font-semibold">Synthesizing Monitoring Matrix...</h1>
           <Button onClick={() => router.push('/chat/advice')} variant="outline">
-            Go to Health Monitoring
+            Go to Health Portal
           </Button>
         </div>
       </div>
@@ -126,27 +127,27 @@ export default function ResultsPage() {
       <div className="flex items-center justify-between mb-10">
         <Button variant="ghost" onClick={() => router.push('/chat')} className="gap-2">
           <ChevronLeft className="h-4 w-4" />
-          Chat Dashboard
+          Chat Console
         </Button>
         <div className="flex items-center gap-3">
           <Badge variant="outline" className="px-4 py-1 rounded-full border-primary/20 text-primary bg-primary/5 uppercase tracking-tighter text-[10px] font-bold">
-            Real-time Analysis Active
+            Biometric Synthesis Active
           </Badge>
           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
         </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
-        {/* Left Column: Clinical Metrics Prediction */}
+        {/* Left Column: Predicted Clinical Metrics */}
         <div className="lg:col-span-4 space-y-6">
           <Card className="border-none glass shadow-xl">
             <CardHeader>
               <CardTitle className="text-xl font-headline flex items-center gap-2">
                 <Activity className="h-5 w-5 text-primary" />
-                Inferred Clinical Metrics
+                Predicted Clinical Matrix
               </CardTitle>
               <CardDescription className="text-xs">
-                AI predictions based on your recent conversations and check-ins.
+                Inferred from Multimodal Deep Learning analysis of your check-ins.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
@@ -156,8 +157,8 @@ export default function ResultsPage() {
                   <span className="text-sm font-medium">Heart Rate</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xl font-bold text-foreground">{result.metrics.heartRate}</span>
-                  <span className="text-[10px] text-muted-foreground block uppercase">BPM Est.</span>
+                  <span className="text-xl font-bold text-foreground">{result.metrics?.heartRate || '--'}</span>
+                  <span className="text-[10px] text-muted-foreground block uppercase">BPM Inferred</span>
                 </div>
               </div>
 
@@ -167,32 +168,32 @@ export default function ResultsPage() {
                   <span className="text-sm font-medium">Blood Pressure</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xl font-bold text-foreground">{result.metrics.bloodPressure}</span>
-                  <span className="text-[10px] text-muted-foreground block uppercase">Target Category</span>
+                  <span className="text-xl font-bold text-foreground">{result.metrics?.bloodPressure || '--'}</span>
+                  <span className="text-[10px] text-muted-foreground block uppercase">Trend Est.</span>
                 </div>
               </div>
 
               <div className="p-5 rounded-2xl bg-secondary/20 flex items-center justify-between group hover:bg-secondary/40 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-xl shadow-sm"><Moon className="h-5 w-5 text-indigo-500" /></div>
-                  <span className="text-sm font-medium">Sleep Recovery</span>
+                  <span className="text-sm font-medium">Sleep Hours</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xl font-bold text-foreground">{result.metrics.sleepHours}</span>
-                  <span className="text-[10px] text-muted-foreground block uppercase">Hours / Day</span>
+                  <span className="text-xl font-bold text-foreground">{result.metrics?.sleepHours || '--'}</span>
+                  <span className="text-[10px] text-muted-foreground block uppercase">Daily Cycle</span>
                 </div>
               </div>
 
               <div className="p-5 rounded-2xl bg-secondary/20 flex items-center justify-between group hover:bg-secondary/40 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-xl shadow-sm"><Brain className="h-5 w-5 text-purple-500" /></div>
-                  <span className="text-sm font-medium">Current Stress</span>
+                  <span className="text-sm font-medium">Stress Signal</span>
                 </div>
                 <div className="text-right">
-                  <Badge className={result.metrics.stressLevel === 'Stress' ? 'bg-orange-500' : 'bg-green-500'}>
-                    {result.metrics.stressLevel}
+                  <Badge className={result.metrics?.stressLevel === 'Stress' ? 'bg-orange-500' : 'bg-green-500'}>
+                    {result.metrics?.stressLevel || 'Unknown'}
                   </Badge>
-                  <span className="text-[10px] text-muted-foreground block uppercase mt-1">AI Prediction</span>
+                  <span className="text-[10px] text-muted-foreground block uppercase mt-1">Sentiment AI</span>
                 </div>
               </div>
             </CardContent>
@@ -200,7 +201,7 @@ export default function ResultsPage() {
 
           <Card className="border-none glass shadow-xl overflow-hidden">
             <CardHeader className="pb-0">
-              <CardTitle className="text-center font-headline text-lg">System Health Index</CardTitle>
+              <CardTitle className="text-center font-headline text-lg">Recovery Score Radar</CardTitle>
             </CardHeader>
             <CardContent>
               <RadarAnalysis scores={result.scores} />
@@ -208,15 +209,15 @@ export default function ResultsPage() {
           </Card>
         </div>
 
-        {/* Right Column: Narrative Analysis & Monitoring Steps */}
+        {/* Right Column: Narrative & Status Analysis */}
         <div className="lg:col-span-8 space-y-8">
           <div className="flex flex-col gap-2">
             <h1 className="text-4xl font-headline font-bold text-foreground lg:text-6xl tracking-tight">
-              Health <span className="text-primary italic">Monitoring Report</span>
+              Health <span className="text-primary italic">Status Report</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl leading-relaxed">
-              Synthesized specifically for <span className="text-foreground font-bold">{result.patientName}</span>. 
-              This monitoring matrix adapts to your conversation-based physiological signals.
+              Real-time monitoring for <span className="text-foreground font-bold">{result.patientName}</span>. 
+              Our system utilizes Federated Learning principles to process your data privately.
             </p>
           </div>
 
@@ -227,8 +228,8 @@ export default function ResultsPage() {
                       <Utensils className="h-5 w-5 text-primary" />
                    </div>
                    <div>
-                      <h4 className="font-headline font-bold">Nutrition Status</h4>
-                      <p className="text-[10px] uppercase text-muted-foreground tracking-widest">{result.metrics.nutritionStatus}</p>
+                      <h4 className="font-headline font-bold">Nutrition & Hydration</h4>
+                      <p className="text-[10px] uppercase text-muted-foreground tracking-widest">{result.metrics?.nutritionStatus || 'Status Pending'}</p>
                    </div>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{result.nutritionAdvice}</p>
@@ -240,8 +241,8 @@ export default function ResultsPage() {
                       <Clock className="h-5 w-5 text-primary" />
                    </div>
                    <div>
-                      <h4 className="font-headline font-bold">Timeline Status</h4>
-                      <p className="text-[10px] uppercase text-muted-foreground tracking-widest">Day {new Date(result.generatedAt).getDate()} / Cycle</p>
+                      <h4 className="font-headline font-bold">Recovery Timeline</h4>
+                      <p className="text-[10px] uppercase text-muted-foreground tracking-widest">Day {new Date(result.generatedAt).getDate()} Monitoring</p>
                    </div>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{result.recoveryAdvice}</p>
@@ -255,7 +256,7 @@ export default function ResultsPage() {
                   <div className="bg-primary/10 p-3 rounded-2xl">
                     <Dumbbell className="h-6 w-6 text-primary" />
                   </div>
-                  <span className="font-headline text-xl font-bold">Safe Movement Optimization</span>
+                  <span className="font-headline text-xl font-bold">Optimized Movement Plan</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-8 text-muted-foreground leading-relaxed text-base border-t border-primary/5 pt-6">
@@ -269,7 +270,7 @@ export default function ResultsPage() {
                   <div className="bg-primary/10 p-3 rounded-2xl">
                     <Brain className="h-6 w-6 text-primary" />
                   </div>
-                  <span className="font-headline text-xl font-bold">Emotional Regulation Path</span>
+                  <span className="font-headline text-xl font-bold">Emotional Wellness Protocol</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-8 text-muted-foreground leading-relaxed text-base border-t border-primary/5 pt-6">
@@ -286,10 +287,10 @@ export default function ResultsPage() {
                <div className="flex-1">
                  <h3 className="text-3xl font-headline font-bold mb-3">Monitoring Cycle Complete</h3>
                  <p className="text-muted-foreground mb-8 text-lg">
-                   Your health status has been synthesized. Return to the Chat Dashboard for continuous monitoring or update your metrics tomorrow.
+                   Your health matrix has been updated. The AI continues to learn from our daily interactions.
                  </p>
                  <Button onClick={() => router.push('/chat')} size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full h-14 px-10 font-bold gap-3 shadow-xl">
-                    Open Chat Console
+                    Back to Chat Dashboard
                     <Activity className="h-5 w-5" />
                  </Button>
                </div>

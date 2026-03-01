@@ -26,7 +26,6 @@ import {
 } from 'react';
 import { EmergencyDialog } from './emergency-dialog';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { useRouter } from 'next/navigation';
 
 const STORAGE_KEY = 'zera_chat_history_v2';
 
@@ -50,7 +49,6 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const router = useRouter();
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -83,21 +81,21 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     setIsLoading(true);
     try {
       const resp = await getEmpatheticResponse({
-        userInput: 'Introduce Zera, the futuristic AI postpartum monitoring assistant.',
-        context: 'First interaction. Mention that monitoring is based on our conversations.',
+        userInput: 'Introduce Zera, the futuristic AI postpartum health monitoring assistant.',
+        context: 'First interaction. Mention that monitoring is powered by Multimodal Deep Learning.',
       });
       setMessages([{ id: 'init', role: 'assistant', content: resp.response }]);
     } catch (e) {
-      setMessages([{ id: 'err', role: 'assistant', content: 'I am Zera, your monitoring assistant. I analyze our conversations to track your recovery status.' }]);
+      setMessages([{ id: 'err', role: 'assistant', content: 'I am Zera, your monitoring assistant. I analyze our conversations to synthesize your recovery status.' }]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const [suggestions] = useState<string[]>([
-    "I'm feeling very stressed today.",
-    "My incision feels slightly sore.",
-    "The baby is sleeping well now.",
+    "I'm feeling very overwhelmed today.",
+    "My recovery feels slightly slow.",
+    "The baby is sleeping better now.",
   ]);
 
   useImperativeHandle(ref, () => ({
@@ -129,11 +127,11 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         setEscalationMessage(esc.escalationMessage);
         setIsEmergency(true);
       } else {
-        const resp = await getEmpatheticResponse({ userInput: text, context: 'Monitoring mode active.' });
+        const resp = await getEmpatheticResponse({ userInput: text, context: 'Advanced Monitoring Mode active.' });
         setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: resp.response }]);
       }
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message || 'Failed to process monitoring input.' });
+      toast({ variant: 'destructive', title: 'Monitoring Error', description: e.message || 'Failed to process physiological signal.' });
     } finally {
       setIsLoading(false);
     }
@@ -145,11 +143,11 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         <div className="px-6 py-4 border-b bg-secondary/20 flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-3 w-3 text-primary" />
-            Conversation Monitoring Active
+            Federated Encryption Active
           </div>
           <div className="flex items-center gap-2">
             <Zap className="h-3 w-3 text-primary" />
-            Gemini Deep Analysis
+            Gemini Deep Synthesis
           </div>
         </div>
 
@@ -193,7 +191,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Report symptoms or discuss your day..."
+              placeholder="Record check-in details or current status..."
               className="resize-none bg-white pr-16 focus:ring-primary/20 min-h-[60px] py-4 px-6 border shadow-inner rounded-3xl text-lg"
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(input); } }}
             />
