@@ -16,8 +16,9 @@ import {
   User,
   ShieldCheck,
   Zap,
-  ArrowRight,
-  UserCircle
+  UserCircle,
+  Save,
+  Lock
 } from 'lucide-react';
 import {
   forwardRef,
@@ -29,6 +30,17 @@ import {
 import { useRouter } from 'next/navigation';
 import { EmergencyDialog } from './emergency-dialog';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const STORAGE_KEY = 'zera_chat_history_v2';
 const PROFILE_KEY = 'zera_user_profile';
@@ -49,9 +61,18 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEmergency, setIsEmergency] = useState(false);
   const [escalationMessage, setEscalationMessage] = useState('');
-  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [mounted, setMounted] = useState(false);
   
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    dob: '',
+    phone: '',
+    email: '',
+    birthMethod: '',
+    daysSinceBirth: '',
+  });
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const router = useRouter();
@@ -59,7 +80,9 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   useEffect(() => {
     setMounted(true);
     const profile = localStorage.getItem(PROFILE_KEY);
-    setHasProfile(!!profile);
+    if (!profile) {
+      setShowProfileDialog(true);
+    }
 
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -81,11 +104,17 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     }
   }, []);
 
-  useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileForm.name || !profileForm.birthMethod || !profileForm.daysSinceBirth) {
+      toast({ variant: 'destructive', title: 'Missing Info', description: 'Please fill in your name and birth details.' });
+      return;
     }
-  }, [messages]);
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profileForm));
+    setShowProfileDialog(false);
+    toast({ title: 'Profile Created', description: 'Your health identity is now stored locally.' });
+    getInitialGreeting();
+  };
 
   const getInitialGreeting = async () => {
     setIsLoading(true);
@@ -148,24 +177,6 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   };
 
   if (!mounted) return null;
-
-  if (hasProfile === false) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-secondary/10 rounded-[40px] border-2 border-dashed border-primary/20">
-        <div className="bg-primary/10 p-6 rounded-full mb-6">
-          <UserCircle className="h-12 w-12 text-primary" />
-        </div>
-        <h2 className="text-2xl font-headline font-bold mb-4">Initialize Health Identity</h2>
-        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-          To begin monitoring, Zera needs a local context node. Create your profile to enable sentiment-based clinical inference.
-        </p>
-        <Button onClick={() => router.push('/chat/profile')} size="lg" className="rounded-full h-14 px-8 font-bold gap-3 shadow-xl">
-          Create Local Profile
-          <ArrowRight className="h-5 w-5" />
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -231,6 +242,107 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
           </form>
         </div>
       </div>
+
+      {/* Simplified Identity Dialog */}
+      <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+        <DialogContent className="max-w-md rounded-[32px] border-none shadow-2xl glass p-0 overflow-hidden">
+          <div className="bg-primary/10 p-8 flex flex-col items-center text-center">
+             <div className="bg-white p-4 rounded-2xl shadow-sm mb-4">
+                <UserCircle className="h-10 w-10 text-primary" />
+             </div>
+             <DialogTitle className="text-2xl font-headline font-bold">Welcome to Zera</DialogTitle>
+             <DialogDescription className="text-muted-foreground mt-2">
+               Let's set up your private health profile. Everything is stored only on your laptop.
+             </DialogDescription>
+          </div>
+          <form onSubmit={handleSaveProfile} className="p-8 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Your Name</Label>
+              <Input 
+                id="name" 
+                placeholder="E.g., Elena" 
+                value={profileForm.name} 
+                onChange={e => setProfileForm(p => ({...p, name: e.target.value}))}
+                className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dob" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Birthday</Label>
+                <Input 
+                  id="dob" 
+                  type="date"
+                  value={profileForm.dob} 
+                  onChange={e => setProfileForm(p => ({...p, dob: e.target.value}))}
+                  className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Phone Number</Label>
+                <Input 
+                  id="phone" 
+                  placeholder="Optional"
+                  value={profileForm.phone} 
+                  onChange={e => setProfileForm(p => ({...p, phone: e.target.value}))}
+                  className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Email Address</Label>
+              <Input 
+                id="email" 
+                type="email"
+                placeholder="Optional"
+                value={profileForm.email} 
+                onChange={e => setProfileForm(p => ({...p, email: e.target.value}))}
+                className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">How did you give birth?</Label>
+              <Select 
+                value={profileForm.birthMethod} 
+                onValueChange={v => setProfileForm(p => ({...p, birthMethod: v}))}
+              >
+                <SelectTrigger className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner">
+                  <SelectValue placeholder="Select one" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vaginal">Natural/Vaginal</SelectItem>
+                  <SelectItem value="c-section">C-Section</SelectItem>
+                  <SelectItem value="assisted">Assisted (Forceps/Vacuum)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="days" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Days since your baby was born?</Label>
+              <Input 
+                id="days" 
+                type="number"
+                placeholder="E.g., 14"
+                value={profileForm.daysSinceBirth} 
+                onChange={e => setProfileForm(p => ({...p, daysSinceBirth: e.target.value}))}
+                className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner"
+              />
+            </div>
+
+            <Button type="submit" className="w-full h-12 rounded-full font-bold mt-6 shadow-xl gap-2">
+              <Save className="h-4 w-4" />
+              Create Local Profile
+            </Button>
+
+            <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest mt-4">
+              <Lock className="h-3 w-3" />
+              100% On-Device Privacy
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <EmergencyDialog open={isEmergency} onOpenChange={setIsEmergency} escalationMessage={escalationMessage} />
     </>

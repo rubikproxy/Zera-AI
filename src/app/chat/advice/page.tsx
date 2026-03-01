@@ -29,10 +29,19 @@ export default function AdvicePage() {
     if (savedProfile) {
       try {
         const profile = JSON.parse(savedProfile);
+        
+        // Calculate age roughly if DOB is present, or just leave blank
+        let age = '';
+        if (profile.dob) {
+           const birthDate = new Date(profile.dob);
+           const ageDiff = Date.now() - birthDate.getTime();
+           age = Math.floor(ageDiff / (1000 * 60 * 60 * 24 * 365.25)).toString();
+        }
+
         setFormData(prev => ({
           ...prev,
           name: profile.name || '',
-          age: profile.age || '',
+          age: age || '',
         }));
       } catch (e) {
         console.error('Failed to load profile for tracker');
@@ -52,11 +61,14 @@ export default function AdvicePage() {
       const historyRaw = localStorage.getItem(CHAT_STORAGE_KEY);
       const historyText = historyRaw ? JSON.parse(historyRaw).map((m: any) => `${m.role}: ${m.content}`).join('\n') : '';
       
+      const savedProfile = localStorage.getItem(PROFILE_KEY);
+      const profileData = savedProfile ? JSON.parse(savedProfile) : {};
+
       const result = await getPersonalizedAdvice({
         name: formData.name,
         age: parseInt(formData.age) || 25,
-        healthData: `USER TRACKER INPUT: ${formData.health}\n\nLOCAL CONVERSATION HISTORY:\n${historyText}`,
-        daysPostpartum: 14,
+        healthData: `USER TRACKER INPUT: ${formData.health}\n\nBIRTH METHOD: ${profileData.birthMethod || 'Unknown'}\nDAYS SINCE BIRTH: ${profileData.daysSinceBirth || 'Unknown'}\n\nLOCAL CONVERSATION HISTORY:\n${historyText}`,
+        daysPostpartum: parseInt(profileData.daysSinceBirth) || 14,
       });
 
       localStorage.setItem(LATEST_RESULT_KEY, JSON.stringify({
@@ -104,7 +116,7 @@ export default function AdvicePage() {
                   id="name" 
                   placeholder="Patient Name" 
                   value={formData.name} 
-                  onChange={e => setFormData(p => ({...p, name: e.target.value}))} 
+                  onChange={e => setFormData(prev => ({...prev, name: e.target.value}))} 
                   className="h-14 rounded-2xl bg-secondary/30 border-none shadow-inner text-lg px-6" 
                 />
               </div>
@@ -115,7 +127,7 @@ export default function AdvicePage() {
                   type="number" 
                   placeholder="Age" 
                   value={formData.age} 
-                  onChange={e => setFormData(p => ({...p, age: e.target.value}))} 
+                  onChange={e => setFormData(prev => ({...prev, age: e.target.value}))} 
                   className="h-14 rounded-2xl bg-secondary/30 border-none shadow-inner text-lg px-6" 
                 />
               </div>
@@ -127,7 +139,7 @@ export default function AdvicePage() {
                 <Textarea 
                   id="health" 
                   value={formData.health} 
-                  onChange={e => setFormData(p => ({...p, health: e.target.value}))} 
+                  onChange={e => setFormData(prev => ({...prev, health: e.target.value}))} 
                   className="min-h-[180px] rounded-[30px] bg-secondary/30 border-none shadow-inner p-6 text-lg resize-none leading-relaxed" 
                   placeholder="Describe your recovery signals: energy, discomfort, bleeding trends, or breastfeeding progress..." 
                 />

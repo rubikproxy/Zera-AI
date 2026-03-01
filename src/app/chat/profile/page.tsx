@@ -15,10 +15,11 @@ const PROFILE_KEY = 'zera_user_profile';
 export default function ProfilePage() {
   const [profile, setProfile] = useState({
     name: '',
-    age: '',
-    deliveryType: '',
-    daysPostpartum: '',
-    location: '',
+    dob: '',
+    phone: '',
+    email: '',
+    birthMethod: '',
+    daysSinceBirth: '',
   });
   const { toast } = useToast();
   const router = useRouter();
@@ -36,15 +37,13 @@ export default function ProfilePage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile.name || !profile.age || !profile.deliveryType) {
+    if (!profile.name || !profile.birthMethod || !profile.daysSinceBirth) {
       toast({ variant: 'destructive', title: 'Validation Error', description: 'Please fill in core details.' });
       return;
     }
 
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-    toast({ title: 'Profile Secured', description: 'Your health context has been saved locally.' });
-    
-    // If we're coming from the initial redirect, go to chat
+    toast({ title: 'Profile Secured', description: 'Your health context has been updated locally.' });
     router.push('/chat');
   };
 
@@ -52,7 +51,7 @@ export default function ProfilePage() {
     <div className="max-w-4xl mx-auto py-12 px-4">
       <div className="flex flex-col gap-2 mb-10 text-center">
         <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">Health <span className="text-primary italic">Identity Node</span></h1>
-        <p className="text-muted-foreground text-lg">Initialize your local profile to enable personalized Multimodal Monitoring.</p>
+        <p className="text-muted-foreground text-lg">Manage your local identity profile and clinical context.</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -63,13 +62,13 @@ export default function ProfilePage() {
                  <UserCircle className="h-6 w-6 text-primary" />
                  Personal Context
                </CardTitle>
-               <CardDescription>This information stays on your device and provides context for Zera AI.</CardDescription>
+               <CardDescription>All information is stored privately on your device.</CardDescription>
             </CardHeader>
             <CardContent className="p-8">
               <form onSubmit={handleSave} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Legal/Preferred Name</Label>
+                    <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Name</Label>
                     <Input 
                       id="name" 
                       value={profile.name} 
@@ -79,13 +78,12 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="age" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Age</Label>
+                    <Label htmlFor="dob" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Date of Birth</Label>
                     <Input 
-                      id="age" 
-                      type="number"
-                      value={profile.age} 
-                      onChange={e => setProfile(p => ({...p, age: e.target.value}))}
-                      placeholder="28"
+                      id="dob" 
+                      type="date"
+                      value={profile.dob} 
+                      onChange={e => setProfile(p => ({...p, dob: e.target.value}))}
                       className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
                     />
                   </div>
@@ -93,28 +91,52 @@ export default function ProfilePage() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Delivery Method</Label>
+                    <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Phone Number</Label>
+                    <Input 
+                      id="phone" 
+                      value={profile.phone} 
+                      onChange={e => setProfile(p => ({...p, phone: e.target.value}))}
+                      placeholder="+1 (555) 000-0000"
+                      className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Email</Label>
+                    <Input 
+                      id="email" 
+                      type="email"
+                      value={profile.email} 
+                      onChange={e => setProfile(p => ({...p, email: e.target.value}))}
+                      placeholder="elena@example.com"
+                      className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">How did you give birth?</Label>
                     <Select 
-                      value={profile.deliveryType} 
-                      onValueChange={v => setProfile(p => ({...p, deliveryType: v}))}
+                      value={profile.birthMethod} 
+                      onValueChange={v => setProfile(p => ({...p, birthMethod: v}))}
                     >
                       <SelectTrigger className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner">
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="vaginal">Spontaneous Vaginal</SelectItem>
-                        <SelectItem value="c-section">C-Section (Planned/Emergency)</SelectItem>
+                        <SelectItem value="vaginal">Natural/Vaginal</SelectItem>
+                        <SelectItem value="c-section">C-Section</SelectItem>
                         <SelectItem value="assisted">Assisted (Forceps/Vacuum)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="days" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Days Postpartum</Label>
+                    <Label htmlFor="days" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Days since baby was born</Label>
                     <Input 
                       id="days" 
                       type="number"
-                      value={profile.daysPostpartum} 
-                      onChange={e => setProfile(p => ({...p, daysPostpartum: e.target.value}))}
+                      value={profile.daysSinceBirth} 
+                      onChange={e => setProfile(p => ({...p, daysSinceBirth: e.target.value}))}
                       placeholder="14"
                       className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
                     />
@@ -123,7 +145,7 @@ export default function ProfilePage() {
 
                 <Button type="submit" className="w-full h-14 rounded-full font-bold text-lg gap-3 shadow-xl hover:scale-[1.02] transition-transform">
                   <Save className="h-5 w-5" />
-                  Commit Profile to Local Store
+                  Update Local Store
                 </Button>
               </form>
             </CardContent>
@@ -142,14 +164,13 @@ export default function ProfilePage() {
               <p>Zera AI operates on a <strong>Federated Learning Architecture</strong>. Your personal data never leaves this browser instance.</p>
               <div className="flex items-center gap-3 p-3 bg-white/50 rounded-xl border border-primary/10">
                 <Database className="h-4 w-4 text-primary" />
-                <span className="font-bold uppercase tracking-tighter">IndexedDB Persistence Active</span>
+                <span className="font-bold uppercase tracking-tighter">Secure Persistence Active</span>
               </div>
-              <p>By saving this profile, you enable Zera to perform sentiment analysis and biometric inference specific to your delivery type.</p>
             </CardContent>
           </Card>
 
           <Button variant="ghost" onClick={() => router.push('/chat')} className="w-full justify-between h-14 rounded-2xl group border border-dashed border-primary/20">
-            <span>Skip to Chat Console</span>
+            <span>Back to Chat</span>
             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
