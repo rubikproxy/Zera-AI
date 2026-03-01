@@ -2,14 +2,13 @@
 'use client';
 
 import { 
-  Activity,
   Home, 
   LifeBuoy, 
   PlusCircle,
   CalendarCheck, 
   UserCircle,
   BarChart3,
-  Search
+  Map
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -38,6 +37,7 @@ export function Sidebar() {
     { label: 'Home', icon: Home, href: '/' },
     { label: 'New Chat', icon: PlusCircle, onClick: handleNewChat },
     { label: 'Daily Check-in', icon: CalendarCheck, href: '/chat/advice' },
+    { label: 'Recovery Journey', icon: Map, href: '/chat/timeline' },
     { label: 'Health Status', icon: BarChart3, href: '/chat/results' },
     { label: 'My Profile', icon: UserCircle, href: '/chat/profile' },
   ];
