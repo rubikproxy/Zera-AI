@@ -39,13 +39,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const STORAGE_KEY = 'zera_chat_history';
+const STORAGE_KEY = 'zera_chat_history_v2';
 const LATEST_RESULT_KEY = 'zera_latest_result';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
-  content: React.ReactNode;
+  content: string;
   metadata?: any;
 }
 
@@ -66,15 +66,24 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   const [adviceFormData, setAdviceFormData] = useState({ name: '', age: '', health: '' });
   const router = useRouter();
 
-  // Persistence
+  // Persistence and initial loading
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setMessages(parsed);
+        // Validate messages to prevent "Objects are not valid as a React child" errors
+        const validMessages = (parsed as Message[]).filter(m => 
+          m && typeof m.content === 'string' && m.id && m.role
+        );
+        if (validMessages.length > 0) {
+          setMessages(validMessages);
+        } else {
+          getInitialGreeting();
+        }
       } catch (e) {
         console.error('Failed to load history', e);
+        getInitialGreeting();
       }
     } else {
       getInitialGreeting();
@@ -96,13 +105,13 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
       });
       setMessages([{ id: 'init', role: 'assistant', content: resp.response }]);
     } catch (e) {
-      setMessages([{ id: 'err', role: 'assistant', content: 'I am Zera. Ready to assist you privately.' }]);
+      setMessages([{ id: 'err', role: 'assistant', content: 'I am Zera, your postpartum health assistant. I provide a safe, private space for your recovery journey.' }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const [suggestions, setSuggestions] = useState<string[]>([
+  const [suggestions] = useState<string[]>([
     "I'm feeling really anxious and overwhelmed.",
     'What are the signs of a c-section infection?',
     'Tell me a tip for better sleep.',
@@ -129,7 +138,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
       }
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const submitMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -146,16 +155,21 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         setIsEmergency(true);
       } else {
         const resp = await getEmpatheticResponse({ userInput: text, context: 'Local interaction mode active.' });
-        setMessages(prev => [...prev, { id: Date.now() + 1 + '', role: 'assistant', content: resp.response }]);
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: resp.response }]);
       }
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
+      toast({ variant: 'destructive', title: 'Error', description: e.message || 'Failed to process request.' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleAdviceSubmit = async () => {
+    if (!adviceFormData.name || !adviceFormData.age || !adviceFormData.health) {
+        toast({ variant: 'destructive', title: 'Missing Info', description: 'Please fill out all fields.' });
+        return;
+    }
+    
     setShowAdviceForm(false);
     setIsLoading(true);
     
@@ -167,7 +181,6 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         daysPostpartum: 14,
       });
       
-      // Save result locally for the dedicated page to read
       localStorage.setItem(LATEST_RESULT_KEY, JSON.stringify({
         ...result,
         patientName: adviceFormData.name,
@@ -175,11 +188,10 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         generatedAt: new Date().toISOString()
       }));
       
-      // Redirect to the separate results page
       router.push('/results');
       
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Matrix Error', description: e.message });
+      toast({ variant: 'destructive', title: 'Matrix Error', description: e.message || 'Failed to generate advice.' });
     } finally {
       setIsLoading(false);
     }
@@ -189,14 +201,16 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     setIsLoading(true);
     try {
       const tip = await getHealthTipAction({ previousTips: [], daysPostpartum: 14 });
-      setMessages(prev => [...prev, { id: Date.now() + '', role: 'assistant', content: tip.tip }]);
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: tip.tip }]);
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch health tip.' });
     } finally { setIsLoading(false); }
   }
 
   return (
     <>
-      <div className="flex h-full flex-col w-full bg-background border rounded-lg shadow-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b bg-secondary/50 flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+      <div className="flex h-full flex-col w-full bg-background border rounded-lg shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b bg-secondary/30 flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-3 w-3 text-primary" />
             Federated Local Encryption Active
@@ -220,7 +234,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
                   'max-w-[85%] rounded-2xl p-4 text-sm shadow-sm transition-all',
                   m.role === 'user' 
                     ? 'bg-primary text-primary-foreground font-medium' 
-                    : 'bg-card border text-foreground'
+                    : 'bg-card border text-foreground whitespace-pre-wrap'
                 )}>
                   {m.content}
                 </div>
@@ -235,7 +249,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t bg-secondary/20 backdrop-blur-md">
+        <div className="p-4 border-t bg-secondary/10 backdrop-blur-md">
           <div className="flex flex-wrap gap-2 mb-4">
             {suggestions.map((s, i) => (
               <Button key={i} variant="outline" size="sm" className="bg-background hover:bg-primary/5 text-[11px] border shadow-sm rounded-full" onClick={() => submitMessage(s)}>
@@ -247,7 +261,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Start typing your message..."
+              placeholder="How are you feeling today?"
               className="resize-none bg-background pr-14 focus:ring-primary/20 min-h-[50px] py-3 px-4 border shadow-inner rounded-xl"
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(input); } }}
             />
