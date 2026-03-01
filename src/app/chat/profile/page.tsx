@@ -21,10 +21,12 @@ export default function ProfilePage() {
     birthMethod: '',
     daysSinceBirth: '',
   });
+  const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     const saved = localStorage.getItem(PROFILE_KEY);
     if (saved) {
       try {
@@ -38,7 +40,7 @@ export default function ProfilePage() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile.name || !profile.birthMethod || !profile.daysSinceBirth) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please fill in core details.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Please fill in your name and birth details.' });
       return;
     }
 
@@ -46,6 +48,8 @@ export default function ProfilePage() {
     toast({ title: 'Profile Updated' });
     router.push('/chat');
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4">
@@ -70,6 +74,7 @@ export default function ProfilePage() {
                   value={profile.name} 
                   onChange={e => setProfile(p => ({...p, name: e.target.value}))}
                   className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                  placeholder="Your full name"
                 />
               </div>
               <div className="space-y-2">
@@ -90,6 +95,7 @@ export default function ProfilePage() {
                   value={profile.phone} 
                   onChange={e => setProfile(p => ({...p, phone: e.target.value}))}
                   className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                  placeholder="e.g. +1 555-0123"
                 />
               </div>
               <div className="space-y-2">
@@ -99,6 +105,7 @@ export default function ProfilePage() {
                   value={profile.email} 
                   onChange={e => setProfile(p => ({...p, email: e.target.value}))}
                   className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                  placeholder="name@example.com"
                 />
               </div>
             </div>
@@ -114,18 +121,19 @@ export default function ProfilePage() {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="vaginal">Natural</SelectItem>
+                    <SelectItem value="natural">Naturally</SelectItem>
                     <SelectItem value="c-section">C-Section</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">How many days has it been since your baby was born?</Label>
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">How many days since baby was born?</Label>
                 <Input 
                   type="number"
                   value={profile.daysSinceBirth} 
                   onChange={e => setProfile(p => ({...p, daysSinceBirth: e.target.value}))}
                   className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                  placeholder="e.g. 14"
                 />
               </div>
             </div>

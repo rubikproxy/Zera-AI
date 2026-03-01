@@ -282,7 +282,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
                     <SelectValue placeholder="Method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="vaginal">Natural</SelectItem>
+                    <SelectItem value="natural">Naturally</SelectItem>
                     <SelectItem value="c-section">C-Section</SelectItem>
                   </SelectContent>
                 </Select>
