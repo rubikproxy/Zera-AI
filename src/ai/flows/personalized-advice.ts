@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview This file contains the personalized advice flow, updated for health monitoring.
+ * @fileOverview This file contains the personalized advice flow, updated for health monitoring and trend detection.
  */
 
 import {ai} from '@/ai/genkit';
@@ -11,16 +11,25 @@ import { withGroqFallback } from '../groq-fallback';
 const PersonalizedAdviceInputSchema = z.object({
   name: z.string().describe('User name'),
   age: z.number().describe('User age'),
-  healthData: z.string().describe('Health details provided by user and conversation summary'),
+  healthData: z.string().describe('Current health details provided by user'),
+  historyData: z.string().optional().describe('Serialized 7-day health history for trend analysis'),
   daysPostpartum: z.number().describe('Days since delivery'),
 });
 export type PersonalizedAdviceInput = z.infer<typeof PersonalizedAdviceInputSchema>;
+
+const TrendAlertSchema = z.object({
+  severity: z.enum(['low', 'medium', 'high', 'emergency']),
+  title: z.string(),
+  message: z.string(),
+  action: z.string(),
+});
 
 const PersonalizedAdviceOutputSchema = z.object({
   recoveryAdvice: z.string(),
   nutritionAdvice: z.string(),
   exerciseAdvice: z.string(),
   mentalWellbeingAdvice: z.string(),
+  trendAlerts: z.array(TrendAlertSchema).describe('Detected health patterns or red flags over time'),
   metrics: z.object({
     heartRate: z.number().describe('Estimated/Predicted resting heart rate'),
     bloodPressure: z.string().describe('Estimated/Predicted blood pressure'),

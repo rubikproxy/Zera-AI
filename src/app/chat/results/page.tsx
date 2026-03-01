@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -17,6 +16,8 @@ import {
   Footprints,
   Calendar,
   Zap,
+  AlertCircle,
+  Stethoscope
 } from 'lucide-react';
 import {
   PolarAngleAxis,
@@ -38,9 +39,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const LATEST_RESULT_KEY = 'zera_latest_result';
 const HISTORY_KEY = 'zera_health_history';
+
+interface TrendAlert {
+  severity: 'low' | 'medium' | 'high' | 'emergency';
+  title: string;
+  message: string;
+  action: string;
+}
 
 interface HealthResult {
   patientName: string;
@@ -49,6 +58,7 @@ interface HealthResult {
   nutritionAdvice: string;
   exerciseAdvice: string;
   mentalWellbeingAdvice: string;
+  trendAlerts?: TrendAlert[];
   metrics: {
     heartRate: number;
     bloodPressure: string;
@@ -103,7 +113,7 @@ const HistoryTrend = ({ history }: { history: any[] }) => {
   if (!history || history.length < 2) {
     return (
       <div className="h-[200px] flex items-center justify-center text-muted-foreground text-xs italic bg-secondary/10 rounded-xl">
-        Submit more Daily Check-ins to visualize your 7-day trend.
+        Complete more check-ins to unlock trend monitoring.
       </div>
     );
   }
@@ -169,7 +179,7 @@ export default function ResultsPage() {
         <div className="text-center space-y-6 max-w-md p-8 glass rounded-[40px]">
           <Activity className="h-16 w-16 text-primary animate-pulse mx-auto" />
           <h1 className="text-3xl font-headline font-bold">No Monitor Active</h1>
-          <p className="text-muted-foreground">Please complete your Daily Check-in to initialize the monitoring system.</p>
+          <p className="text-muted-foreground">Complete your Daily Check-in to generate your first health matrix.</p>
           <Button onClick={() => router.push('/chat/advice')} className="w-full h-14 rounded-full font-bold text-lg shadow-lg">
             Start Daily Check-in
           </Button>
@@ -177,6 +187,11 @@ export default function ResultsPage() {
       </div>
     );
   }
+
+  const sortedAlerts = result.trendAlerts?.sort((a, b) => {
+    const order = { emergency: 0, high: 1, medium: 2, low: 3 };
+    return order[a.severity] - order[b.severity];
+  }) || [];
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
@@ -187,13 +202,52 @@ export default function ResultsPage() {
         </Button>
         <div className="flex items-center gap-3">
           <Badge variant="outline" className="px-3 py-0.5 rounded-full border-primary/20 text-primary bg-primary/5 text-[9px] font-bold uppercase tracking-widest">
-            Identity Node Synced
+            Monitoring Node Active
           </Badge>
           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
+        {/* Trend Alerts Section */}
+        {sortedAlerts.length > 0 && (
+          <div className="lg:col-span-12 space-y-4">
+            {sortedAlerts.map((alert, idx) => (
+              <Alert 
+                key={idx} 
+                variant={alert.severity === 'emergency' || alert.severity === 'high' ? 'destructive' : 'default'}
+                className={cn(
+                  "border-l-4 shadow-sm",
+                  alert.severity === 'emergency' && "border-l-red-600 bg-red-50",
+                  alert.severity === 'high' && "border-l-orange-500 bg-orange-50",
+                  alert.severity === 'medium' && "border-l-yellow-500",
+                  alert.severity === 'low' && "border-l-primary"
+                )}
+              >
+                <div className="flex gap-4">
+                  {alert.severity === 'emergency' || alert.severity === 'high' ? (
+                    <AlertCircle className="h-5 w-5 mt-0.5" />
+                  ) : (
+                    <Stethoscope className="h-5 w-5 mt-0.5 text-primary" />
+                  )}
+                  <div className="flex-1">
+                    <AlertTitle className="font-headline font-bold text-lg flex items-center gap-2">
+                      {alert.title}
+                      {alert.severity === 'emergency' && <Badge className="bg-red-600 uppercase text-[10px]">Critical Pattern</Badge>}
+                    </AlertTitle>
+                    <AlertDescription className="mt-1 text-sm">
+                      <p className="font-medium">{alert.message}</p>
+                      <div className="mt-2 p-3 rounded-lg bg-black/5 font-bold text-xs uppercase tracking-tight">
+                        Recommended Action: {alert.action}
+                      </div>
+                    </AlertDescription>
+                  </div>
+                </div>
+              </Alert>
+            ))}
+          </div>
+        )}
+
         {/* Metric Cards Grid */}
         <div className="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4">
            <Card className="border-none glass shadow-sm p-5 text-center flex flex-col items-center gap-2">
@@ -224,14 +278,14 @@ export default function ResultsPage() {
             <CardHeader className="pb-2">
                <CardTitle className="text-base font-headline flex items-center gap-2">
                  <Zap className="h-4 w-4 text-primary" />
-                 Stress Prediction
+                 Mood Analysis
                </CardTitle>
             </CardHeader>
             <CardContent className="text-center py-6">
                <div className="text-5xl mb-4">{result.metrics?.stressLevel === 'Stress' ? '😔' : '😊'}</div>
                <div className="text-2xl font-bold text-foreground">{result.metrics?.stressLevel || 'Monitoring...'}</div>
                <Badge className={result.metrics?.stressLevel === 'Stress' ? 'bg-orange-500 mt-2' : 'bg-green-500 mt-2'}>
-                 System Consistent
+                 Pattern Detected
                </Badge>
             </CardContent>
           </Card>
@@ -269,14 +323,14 @@ export default function ResultsPage() {
              <Card className="border-none glass shadow-sm p-5">
                 <div className="flex items-center gap-3 mb-3">
                    <div className="bg-primary/10 p-2 rounded-lg"><Brain className="h-4 w-4 text-primary" /></div>
-                   <h4 className="font-headline font-bold text-sm">Recovery Analysis</h4>
+                   <h4 className="font-headline font-bold text-sm">Physical Recovery</h4>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">{result.recoveryAdvice}</p>
              </Card>
              <Card className="border-none glass shadow-sm p-5">
                 <div className="flex items-center gap-3 mb-3">
                    <div className="bg-primary/10 p-2 rounded-lg"><Clock className="h-4 w-4 text-primary" /></div>
-                   <h4 className="font-headline font-bold text-sm">Targeted Movement</h4>
+                   <h4 className="font-headline font-bold text-sm">Movement Strategy</h4>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">{result.exerciseAdvice}</p>
              </Card>

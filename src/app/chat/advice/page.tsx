@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getPersonalizedAdvice } from '@/app/actions';
-import { Activity, Loader, ChevronLeft, Heart, Moon, Footprints, Thermometer, Brain } from 'lucide-react';
+import { Activity, Loader, ChevronLeft, Heart, Moon, Footprints, Droplets } from 'lucide-react';
 
 const LATEST_RESULT_KEY = 'zera_latest_result';
 const HISTORY_KEY = 'zera_health_history';
@@ -60,6 +59,16 @@ export default function AdvicePage() {
       const savedProfile = localStorage.getItem(PROFILE_KEY);
       const profile = savedProfile ? JSON.parse(savedProfile) : {};
 
+      const historyRaw = localStorage.getItem(HISTORY_KEY);
+      const history = historyRaw ? JSON.parse(historyRaw) : [];
+      
+      // Serialize last 7 days for AI trend analysis
+      const historySummary = history.slice(0, 7).map((h: any) => ({
+        date: h.timestamp.split('T')[0],
+        scores: h.scores,
+        metrics: h.metrics
+      }));
+
       const healthContext = `
         DAILY CHECK-IN:
         Overall Health: ${formData.healthStatus}
@@ -73,8 +82,9 @@ export default function AdvicePage() {
 
       const result = await getPersonalizedAdvice({
         name: profile.name || 'User',
-        age: profile.age || 25,
+        age: parseInt(profile.age) || 25,
         healthData: healthContext,
+        historyData: JSON.stringify(historySummary),
         daysPostpartum: parseInt(profile.daysSinceBirth) || 14,
       });
 
@@ -83,26 +93,24 @@ export default function AdvicePage() {
         ...result,
         patientName: profile.name,
         timestamp: new Date().toISOString(),
-        inputSnapshot: formData, // Store the form state for modification later today
+        inputSnapshot: formData, 
       };
 
       // Save to latest
       localStorage.setItem(LATEST_RESULT_KEY, JSON.stringify(newEntry));
 
-      // Update History - Replace if today exists, otherwise add
-      const historyRaw = localStorage.getItem(HISTORY_KEY);
-      let history = historyRaw ? JSON.parse(historyRaw) : [];
-      
-      const existingTodayIndex = history.findIndex((entry: any) => entry.timestamp.startsWith(today));
+      // Update History
+      let updatedHistory = history;
+      const existingTodayIndex = updatedHistory.findIndex((entry: any) => entry.timestamp.startsWith(today));
       if (existingTodayIndex > -1) {
-        history[existingTodayIndex] = newEntry;
+        updatedHistory[existingTodayIndex] = newEntry;
       } else {
-        history = [newEntry, ...history];
+        updatedHistory = [newEntry, ...updatedHistory];
       }
       
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 30)));
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory.slice(0, 30)));
 
-      toast({ title: 'Monitoring Sync Complete', description: 'Your health dashboard has been updated.' });
+      toast({ title: 'Monitoring Sync Complete', description: 'Your health matrix has been updated.' });
       router.push('/chat/results');
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Monitoring Error', description: e.message || 'Failed to generate status.' });
@@ -129,7 +137,7 @@ export default function AdvicePage() {
           </div>
           <CardTitle className="text-3xl font-headline font-bold text-foreground">Daily <span className="text-primary italic">Check-in</span></CardTitle>
           <CardDescription className="text-muted-foreground text-base mt-2">
-            Record your recovery signals. Today's data can be modified anytime.
+            Update your daily signals for real-time monitoring.
           </CardDescription>
         </CardHeader>
         <CardContent className="px-8 pb-12 pt-6">
@@ -138,7 +146,7 @@ export default function AdvicePage() {
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">How is your health today?</Label>
                 <Input 
-                  placeholder="e.g. Feeling strong, slight discomfort..." 
+                  placeholder="e.g. Feeling good, slight fatigue..." 
                   value={formData.healthStatus} 
                   onChange={e => setFormData(prev => ({...prev, healthStatus: e.target.value}))} 
                   className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner px-4" 
@@ -199,7 +207,7 @@ export default function AdvicePage() {
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                   BP (e.g. 120/80)
+                  <Droplets className="h-3 w-3" /> BP (e.g. 120/80)
                 </Label>
                 <Input 
                   placeholder="120/80" 
@@ -211,24 +219,24 @@ export default function AdvicePage() {
             </div>
             
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Additional Recovery Context</Label>
+              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Additional Context</Label>
               <Textarea 
                 value={formData.additionalInfo} 
                 onChange={e => setFormData(prev => ({...prev, additionalInfo: e.target.value}))} 
                 className="min-h-[120px] rounded-2xl bg-secondary/30 border-none shadow-inner p-4 resize-none" 
-                placeholder="Share more about how you are feeling today..." 
+                placeholder="How are you feeling physically and emotionally today?" 
               />
             </div>
 
             <Button 
               type="submit" 
               disabled={isLoading} 
-              className="w-full h-14 rounded-full font-bold text-lg shadow-xl bg-primary text-primary-foreground"
+              className="w-full h-14 rounded-full font-bold text-lg shadow-xl"
             >
               {isLoading ? (
                 <>
                   <Loader className="mr-2 h-5 w-5 animate-spin" />
-                  Analyzing Digital Twin...
+                  Generating Health Matrix...
                 </>
               ) : (
                 'Sync Health Report'
