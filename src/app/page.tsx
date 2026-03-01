@@ -3,9 +3,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   LifeBuoy,
-  Bot,
   ShieldCheck,
-  Activity,
   Check,
   HeartHandshake,
   Siren,
@@ -18,13 +16,13 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardContent } from '@/components/ui/card';
 
 const LandingHeader = () => (
-  <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
+  <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
     <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
       <Link href="/" className="flex items-center gap-2 font-semibold">
         <LifeBuoy className="h-6 w-6 text-primary" />
-        <span className="font-headline text-lg">AI Zera</span>
+        <span className="font-headline text-lg text-foreground">AI Zera</span>
       </Link>
-      <Button asChild>
+      <Button asChild className="shadow-lg">
         <Link href="/chat">Get Started</Link>
       </Button>
     </div>
@@ -32,12 +30,11 @@ const LandingHeader = () => (
 );
 
 const LandingFooter = () => (
-  <footer className="border-t">
-    <div className="container mx-auto py-6 px-4 md:px-6 text-center text-muted-foreground text-sm">
-      <p>&copy; {new Date().getFullYear()} AI Zera. A conceptual project.</p>
+  <footer className="border-t bg-secondary/30">
+    <div className="container mx-auto py-8 px-4 md:px-6 text-center text-muted-foreground text-sm">
+      <p>&copy; {new Date().getFullYear()} AI Zera. A PG project on Multimodal Deep Learning.</p>
       <p className="mt-2">
-        This is not a medical device. Always consult with a healthcare
-        professional.
+        This is a research prototype. Always consult with a healthcare professional.
       </p>
     </div>
   </footer>
@@ -52,12 +49,12 @@ const FeatureCard = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  <div className="flex flex-col items-center text-center p-6 rounded-lg bg-card shadow-sm transition-transform transform hover:-translate-y-1">
+  <div className="flex flex-col items-center text-center p-8 rounded-2xl glass transition-all hover:scale-[1.02]">
     <div className="bg-primary/10 p-4 rounded-full">
       <Icon className="h-8 w-8 text-primary" />
     </div>
-    <h3 className="mt-4 text-xl font-semibold">{title}</h3>
-    <p className="mt-2 text-muted-foreground">{children}</p>
+    <h3 className="mt-4 text-xl font-headline font-semibold text-foreground">{title}</h3>
+    <p className="mt-3 text-muted-foreground text-sm leading-relaxed">{children}</p>
   </div>
 );
 
@@ -70,12 +67,14 @@ const TestimonialCard = ({
   author: string;
   role: string;
 }) => (
-  <Card className="border-none bg-secondary/50 shadow-none">
-    <CardContent className="p-6">
-      <Quote className="h-8 w-8 text-primary/50 mb-4" />
-      <p className="text-foreground/80 italic mb-4">"{quote}"</p>
-      <div className="font-semibold text-foreground">{author}</div>
-      <div className="text-sm text-muted-foreground">{role}</div>
+  <Card className="border-none glass shadow-none">
+    <CardContent className="p-8">
+      <Quote className="h-8 w-8 text-primary/30 mb-4" />
+      <p className="text-foreground/80 italic mb-6 leading-relaxed">"{quote}"</p>
+      <div className="flex flex-col">
+        <span className="font-semibold text-foreground">{author}</span>
+        <span className="text-xs text-primary/70">{role}</span>
+      </div>
     </CardContent>
   </Card>
 );
@@ -85,11 +84,11 @@ export default function LandingPage() {
   const featureImage = PlaceHolderImages.find((img) => img.id === 'feature3');
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen">
       <LandingHeader />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative h-[70vh] min-h-[500px] md:h-screen md:min-h-[600px] flex items-center justify-center text-center text-white">
+        <section className="relative h-[85vh] min-h-[600px] flex items-center justify-center text-center">
           {heroImage && (
             <Image
               src={heroImage.imageUrl}
@@ -100,220 +99,116 @@ export default function LandingPage() {
               data-ai-hint={heroImage.imageHint}
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
-          <div className="relative z-10 p-4">
-            <h1 className="text-4xl font-headline tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-              Empathetic Support for Your Fourth Trimester
+          <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
+          <div className="relative z-10 p-4 max-w-5xl mx-auto">
+            <div className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-primary/10 text-primary mb-6 animate-fade-in border border-primary/20">
+              New: Multi-Model Resilience Powered by Gemini & Groq
+            </div>
+            <h1 className="text-4xl font-headline tracking-tight sm:text-6xl md:text-7xl lg:text-8xl text-foreground neon-glow">
+              Empathetic Care for the <span className="text-primary italic">Fourth Trimester</span>
             </h1>
-            <p className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-primary-foreground/90">
-              AI Zera is your personal health assistant, providing evidence-based
-              guidance and a supportive space throughout your postpartum journey.
+            <p className="mt-8 max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground leading-relaxed">
+              Experience the next generation of postpartum support. Zera AI combines Multimodal Deep Learning with Federated Learning principles for secure, evidence-based guidance.
             </p>
-            <p className="mt-2 max-w-4xl mx-auto text-sm text-primary-foreground/70 font-light">
-              A project on Multimodal Deep Learning Technique with Federated
-              Learning for Postpartum Health Monitoring and Support
-            </p>
-            <div className="mt-8">
-              <Button size="lg" asChild>
-                <Link href="/chat">Start Your Journey Now</Link>
+            <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" asChild className="h-14 px-8 text-lg rounded-full">
+                <Link href="/chat">Launch AI Assistant</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild className="h-14 px-8 text-lg rounded-full glass">
+                <Link href="#features">Explore Technology</Link>
               </Button>
             </div>
+            <p className="mt-10 text-xs text-muted-foreground font-medium uppercase tracking-widest">
+              Research Project: Postpartum Health Monitoring & Support
+            </p>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="py-16 md:py-24 bg-secondary/50">
+        <section id="features" className="py-24 bg-secondary/30 relative overflow-hidden">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-headline sm:text-4xl">
-                Your 24/7 Postpartum Companion
-              </h2>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-headline sm:text-5xl text-foreground">Advanced Triage & Support</h2>
               <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
-                Zera is more than a chatbot. It's an intelligent assistant
-                designed to understand, guide, and support you through the
-                ups and downs of postpartum recovery.
+                Intelligent systems designed to prioritize maternal well-being through safe, automated analysis.
               </p>
             </div>
-            <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              <FeatureCard icon={HeartHandshake} title="Empathetic Conversations">
-                Chat with Zera anytime. It's trained to be an understanding,
-                non-judgmental listener for your questions and concerns.
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              <FeatureCard icon={HeartHandshake} title="Empathetic Response Engine">
+                Zera is programmed to be an understanding listener, providing human-like empathy for your recovery journey.
               </FeatureCard>
-              <FeatureCard icon={Siren} title="Urgent Symptom Triage">
-                Zera analyzes your described symptoms for urgency and provides
-                clear, immediate guidance on when to contact a medical
-                provider.
+              <FeatureCard icon={Siren} title="Emergency Symptom Triage">
+                Our AI analyzes symptoms in real-time to identify high-risk signals and escalate to immediate medical guidance.
               </FeatureCard>
-              <FeatureCard
-                icon={MessageSquareHeart}
-                title="Mental Health Screening"
-              >
-                Complete the EPDS screening in a guided, conversational format to
-                gently check in on your emotional well-being.
+              <FeatureCard icon={MessageSquareHeart} title="Mental Health Screening">
+                Integrated EPDS screening helps monitor emotional well-being with clinically-backed assessment logic.
               </FeatureCard>
-              <FeatureCard icon={Baby} title="Breastfeeding Support">
-                From latching issues to soreness, get instant tips and
-                evidence-based advice to navigate your breastfeeding journey.
+              <FeatureCard icon={Baby} title="Newborn Integration">
+                Guidance that considers the needs of both mother and baby for a holistic approach to postpartum wellness.
               </FeatureCard>
-              <FeatureCard icon={Sparkles} title="Personalized Advice">
-                Based on your conversations, Zera can offer tailored advice on
-                nutrition, gentle exercise, and mental wellness.
+              <FeatureCard icon={Sparkles} title="Recovery Matrix">
+                Personalized physical and mental advice based on your specific health context and delivery type.
               </FeatureCard>
-              <FeatureCard icon={ShieldCheck} title="Private & Secure">
-                Your conversations are private. Zera is built with federated
-                learning principles in mind for a secure, confidential
-                experience.
+              <FeatureCard icon={ShieldCheck} title="Privacy by Design">
+                Engineered with local persistence and data minimization principles to ensure your privacy remains absolute.
               </FeatureCard>
             </div>
           </div>
         </section>
 
         {/* How It Works Section */}
-        <section className="py-16 md:py-24">
+        <section className="py-24">
           <div className="container mx-auto px-4 md:px-6 text-center">
-            <h2 className="text-3xl font-headline sm:text-4xl">
-              Simple, Intuitive, and Safe
-            </h2>
-            <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
-              Getting the support you need is as easy as sending a message.
-            </p>
-            <div className="mt-12 grid gap-8 md:grid-cols-3">
-              <div className="flex flex-col items-center">
-                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground font-bold text-2xl mb-4">
-                  1
+            <h2 className="text-3xl font-headline sm:text-5xl mb-16 text-foreground">A Seamless Experience</h2>
+            <div className="grid gap-12 md:grid-cols-3 max-w-5xl mx-auto">
+              {[
+                { step: "01", title: "Human Input", text: "Simply chat or provide health details in natural language." },
+                { step: "02", title: "Neural Analysis", text: "Zera processes data using advanced Gemini-powered multimodal techniques." },
+                { step: "03", title: "Actionable Insights", text: "Receive structured advice, recovery charts, and clear next steps." }
+              ].map((item, idx) => (
+                <div key={idx} className="relative">
+                  <div className="text-8xl font-headline opacity-5 text-primary absolute -top-10 left-1/2 -translate-x-1/2">
+                    {item.step}
+                  </div>
+                  <h3 className="text-2xl font-headline font-semibold mb-4 text-foreground relative z-10">{item.title}</h3>
+                  <p className="text-muted-foreground relative z-10 leading-relaxed">{item.text}</p>
                 </div>
-                <h3 className="text-xl font-semibold">Share What's on Your Mind</h3>
-                <p className="mt-2 text-muted-foreground">
-                  Ask a question, describe a symptom, or share how you're feeling
-                  in plain language.
-                </p>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground font-bold text-2xl mb-4">
-                  2
-                </div>
-                <h3 className="text-xl font-semibold">AI-Powered Analysis</h3>
-                <p className="mt-2 text-muted-foreground">
-                  Zera's advanced AI analyzes your input for context, keywords,
-                  and potential urgency.
-                </p>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground font-bold text-2xl mb-4">
-                  3
-                </div>
-                <h3 className="text-xl font-semibold">Receive Clear Guidance</h3>
-                <p className="mt-2 text-muted-foreground">
-                  Get an empathetic response with evidence-based information and
-                  safe, actionable next steps.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Technology Section */}
-        <section className="py-16 md:py-24 bg-secondary/50">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="items-center grid gap-8 md:grid-cols-2">
-              <div>
-                <h2 className="text-3xl font-headline sm:text-4xl">
-                  Powered by Advanced, Responsible AI
-                </h2>
-                <p className="mt-4 text-muted-foreground md:text-lg">
-                  Zera leverages a Multimodal Deep Learning Technique, allowing
-                  it to understand not just text, but a combination of inputs
-                  to provide more accurate support. Our architecture is designed
-                  with Federated Learning concepts to enhance privacy, ensuring
-                  your personal data stays safe.
-                </p>
-                <ul className="mt-6 space-y-4 text-muted-foreground">
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-primary mr-3 mt-1 flex-shrink-0" />
-                    <span>
-                      <span className="font-semibold text-foreground">
-                        Multimodal Input:
-                      </span>{' '}
-                      Understands and processes various types of information for
-                      comprehensive analysis.
-                    </span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-primary mr-3 mt-1 flex-shrink-0" />
-                    <span>
-                      <span className="font-semibold text-foreground">
-                        Privacy-Centric:
-                      </span>{' '}
-                      Built on principles of federated learning to protect user
-                      data.
-                    </span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="h-5 w-5 text-primary mr-3 mt-1 flex-shrink-0" />
-                    <span>
-                      <span className="font-semibold text-foreground">
-                        Dual-Model Resilience:
-                      </span>{' '}
-                      Utilizes Google's Gemini for primary processing with a
-                      seamless fallback to ensure high availability.
-                    </span>
-                  </li>
-                </ul>
-              </div>
-              <div className="text-center">
-                {featureImage && (
-                  <Image
-                    src={featureImage.imageUrl}
-                    alt={featureImage.description}
-                    width={500}
-                    height={400}
-                    className="rounded-lg shadow-lg mx-auto"
-                    data-ai-hint={featureImage.imageHint}
-                  />
-                )}
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* Testimonials Section */}
-        <section className="py-16 md:py-24">
+        <section className="py-24 bg-secondary/30">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-headline sm:text-4xl">
-                Trusted by Mothers Like You
-              </h2>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-headline sm:text-5xl text-foreground">Trusted Support</h2>
             </div>
-            <div className="mt-12 grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
+            <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
               <TestimonialCard
-                quote="In the middle of the night, feeling anxious, Zera gave me clear information that helped me decide to call my doctor. It was so reassuring to have that immediate support."
+                quote="The emergency triage feature is incredible. It gave me the confidence to contact my provider when I noticed signs I might have normally ignored."
                 author="Jessica M."
-                role="New Mother, 3 weeks postpartum"
+                role="3 Weeks Postpartum"
               />
               <TestimonialCard
-                quote="I didn't know if my sadness was 'normal' baby blues or something more. Using the mental health check-in gave me the confidence to bring it up at my next appointment."
+                quote="Having a space to check in daily and see my recovery progress visualized really helped my mental well-being during those first few weeks."
                 author="Samantha R."
-                role="New Mother, 6 weeks postpartum"
+                role="6 Weeks Postpartum"
               />
             </div>
           </div>
         </section>
 
         {/* Final CTA Section */}
-        <section className="py-20 text-center bg-primary/5">
-          <div className="container mx-auto px-4 md:px-6">
-            <h2 className="text-3xl font-headline sm:text-4xl">
-              Ready to Feel More Supported?
-            </h2>
-            <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
-              Start your conversation with Zera today and get the confidential,
-              empathetic support you deserve.
+        <section className="py-32 text-center relative overflow-hidden bg-primary/5">
+          <div className="container mx-auto px-4 md:px-6 relative z-10">
+            <h2 className="text-4xl font-headline sm:text-6xl text-foreground mb-8">Begin Your Recovery Matrix</h2>
+            <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-xl mb-12">
+              Start your journey with Zera AI today and experience professional, empathetic postpartum support.
             </p>
-            <div className="mt-8">
-              <Button size="lg" asChild>
-                <Link href="/chat">Chat With Zera Now</Link>
-              </Button>
-            </div>
+            <Button size="lg" asChild className="h-16 px-12 text-xl rounded-full shadow-2xl">
+              <Link href="/chat">Launch AI Dashboard</Link>
+            </Button>
           </div>
         </section>
       </main>
