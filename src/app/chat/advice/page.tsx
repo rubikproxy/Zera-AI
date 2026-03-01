@@ -50,19 +50,18 @@ export default function AdvicePage() {
     }
   }, []);
 
-  // Immediate Triage Logic
   useEffect(() => {
     const bp = formData.bloodPressure;
     const hr = parseInt(formData.heartRate);
     if (bp.includes('/')) {
       const systolic = parseInt(bp.split('/')[0]);
       if (systolic >= 160) {
-        setTriageAlert("Critical: Your blood pressure is very high (≥160 systolic). This requires immediate medical attention. Please contact your provider or go to the ER now.");
+        setTriageAlert("Critical: Your blood pressure is very high (≥160 systolic). This requires immediate medical attention.");
         return;
       }
     }
     if (hr > 120) {
-      setTriageAlert("Critical: Your heart rate is very high (>120 BPM). Please rest and contact a healthcare professional if this persists.");
+      setTriageAlert("Critical: Your heart rate is very high (>120 BPM). Please rest and contact a professional.");
       return;
     }
     setTriageAlert(null);
@@ -83,18 +82,10 @@ export default function AdvicePage() {
         metrics: h.metrics
       }));
 
-      const healthContext = `
-        DAILY MONITORING REPORT:
-        Overall Health Statement: ${formData.healthStatus}
-        Vitals - Sleep: ${formData.sleepHours}h, Heart Rate: ${formData.heartRate}bpm, Steps: ${formData.steps}, BP: ${formData.bloodPressure}
-        Emotional State: ${formData.mood}
-        Additional Symptoms/Context: ${formData.additionalInfo}
-      `;
-
       const result = await getPersonalizedAdvice({
         name: profile.name || 'User',
         age: parseInt(profile.age) || 25,
-        healthData: healthContext,
+        healthData: `Vitals: Sleep ${formData.sleepHours}h, HR ${formData.heartRate}bpm, Steps ${formData.steps}, BP ${formData.bloodPressure}. Mood: ${formData.mood}`,
         historyData: JSON.stringify(historySummary),
         daysPostpartum: parseInt(profile.daysSinceBirth) || 14,
       });
@@ -117,10 +108,10 @@ export default function AdvicePage() {
       }
       localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory.slice(0, 30)));
 
-      toast({ title: 'Monitoring Sync Complete', description: 'Your health matrix has been updated.' });
+      toast({ title: 'Monitoring Sync Complete' });
       router.push('/chat/results');
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Neural Error', description: e.message || 'Failed to sync signal.' });
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
@@ -130,61 +121,53 @@ export default function AdvicePage() {
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4">
-      <Button variant="ghost" onClick={() => router.back()} className="mb-8 gap-2 text-muted-foreground hover:text-foreground group">
+      <Button variant="ghost" onClick={() => router.back()} className="mb-8 gap-2 text-black/60 hover:text-black group">
         <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
         Back
       </Button>
 
       {triageAlert && (
-        <Alert variant="destructive" className="mb-8 rounded-[32px] border-[3px] p-8 shadow-2xl bg-destructive/5 animate-pulse">
+        <Alert variant="destructive" className="mb-8 rounded-[32px] border-[3px] p-8 shadow-2xl bg-red-50">
           <div className="flex gap-5">
-            <div className="bg-destructive text-white p-3 rounded-2xl h-fit">
+            <div className="bg-red-600 text-white p-3 rounded-2xl h-fit">
               <ShieldAlert className="h-8 w-8" />
             </div>
             <div>
-              <AlertTitle className="text-2xl font-black uppercase tracking-tight mb-2">Immediate Action Required</AlertTitle>
-              <AlertDescription className="text-base font-bold leading-relaxed">{triageAlert}</AlertDescription>
+              <AlertTitle className="text-2xl font-black uppercase tracking-tight mb-2 text-black">Action Required</AlertTitle>
+              <AlertDescription className="text-base font-medium text-black">{triageAlert}</AlertDescription>
             </div>
           </div>
         </Alert>
       )}
 
-      <Card className="border-none glass shadow-2xl rounded-[48px] overflow-hidden border-white/40">
+      <Card className="border-none glass shadow-2xl rounded-[48px] overflow-hidden">
         <CardHeader className="text-center pb-6 pt-12 px-10">
-          <div className="flex justify-center mb-8">
-            <div className="bg-primary/10 p-6 rounded-[28px] shadow-lg relative">
-              <Activity className="h-10 w-10 text-primary" />
-              <div className="absolute -top-2 -right-2 bg-green-500 h-5 w-5 rounded-full border-4 border-white animate-pulse" />
-            </div>
-          </div>
-          <CardTitle className="text-4xl font-headline font-black text-foreground tracking-tight">Daily <span className="text-primary italic">Sync</span></CardTitle>
-          <CardDescription className="text-muted-foreground text-lg mt-3 font-medium">
-            Update your clinical signals for neural matrix monitoring.
-          </CardDescription>
+          <CardTitle className="text-4xl font-headline font-black text-black tracking-tight uppercase">Daily <span className="text-primary italic">Sync</span></CardTitle>
+          <CardDescription className="text-black/60 text-lg mt-3 font-medium">Update clinical signals for monitoring.</CardDescription>
         </CardHeader>
         <CardContent className="px-10 pb-16 pt-8">
           <form onSubmit={handleSubmit} className="space-y-10">
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground ml-2">Health Statement</Label>
+                <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-black ml-2">Health Statement</Label>
                 <Input 
-                  placeholder="E.g., Feeling stable, recovery is steady..." 
+                  placeholder="How is your health today?" 
                   value={formData.healthStatus} 
                   onChange={e => setFormData(prev => ({...prev, healthStatus: e.target.value}))} 
-                  className="h-14 rounded-[20px] bg-secondary/30 border-none shadow-inner px-6 text-base" 
+                  className="h-14 rounded-[20px] bg-secondary/50 border-none shadow-inner px-6 text-base text-black font-medium" 
                 />
               </div>
               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground ml-2">Sentimental Status</Label>
+                <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-black ml-2">Current Mood</Label>
                 <Select value={formData.mood} onValueChange={v => setFormData(p => ({...p, mood: v}))}>
-                  <SelectTrigger className="h-14 rounded-[20px] bg-secondary/30 border-none shadow-inner px-6">
-                    <SelectValue placeholder="Current Mood" />
+                  <SelectTrigger className="h-14 rounded-[20px] bg-secondary/50 border-none shadow-inner px-6 text-black font-medium">
+                    <SelectValue placeholder="Mood" />
                   </SelectTrigger>
                   <SelectContent className="rounded-[20px]">
-                    <SelectItem value="happy">Happy / Balanced</SelectItem>
-                    <SelectItem value="stressed">Stressed / Anxious</SelectItem>
-                    <SelectItem value="tired">Tired / Exhausted</SelectItem>
-                    <SelectItem value="sad">Sad / Low</SelectItem>
+                    <SelectItem value="happy">Happy</SelectItem>
+                    <SelectItem value="stressed">Stressed</SelectItem>
+                    <SelectItem value="tired">Tired</SelectItem>
+                    <SelectItem value="sad">Sad</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -193,12 +176,12 @@ export default function AdvicePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
               {[
                 { label: 'Sleep', icon: Moon, key: 'sleepHours', placeholder: '8', unit: 'Hrs' },
-                { label: 'Pulse', icon: Heart, key: 'heartRate', placeholder: '72', unit: 'BPM' },
+                { label: 'Heart Rate', icon: Heart, key: 'heartRate', placeholder: '72', unit: 'BPM' },
                 { label: 'Steps', icon: Footprints, key: 'steps', placeholder: '2000', unit: 'Count' },
-                { label: 'BP Est.', icon: Droplets, key: 'bloodPressure', placeholder: '120/80', unit: 'Syst/Dias' }
+                { label: 'BP', icon: Droplets, key: 'bloodPressure', placeholder: '120/80', unit: 'S/D' }
               ].map((field) => (
                 <div key={field.key} className="space-y-3">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 ml-1">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-black flex items-center gap-2 ml-1">
                     <field.icon className="h-3 w-3 text-primary" /> {field.label}
                   </Label>
                   <div className="relative">
@@ -207,40 +190,31 @@ export default function AdvicePage() {
                       placeholder={field.placeholder} 
                       value={(formData as any)[field.key]} 
                       onChange={e => setFormData(prev => ({...prev, [field.key]: e.target.value}))} 
-                      className="h-12 rounded-[16px] bg-secondary/30 border-none shadow-inner px-4 font-bold" 
+                      className="h-12 rounded-[16px] bg-secondary/50 border-none shadow-inner px-4 font-medium text-black" 
                     />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black uppercase text-primary/40">{field.unit}</div>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black text-black/40">{field.unit}</div>
                   </div>
                 </div>
               ))}
             </div>
             
             <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground ml-2">Clinical Context</Label>
+              <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-black ml-2">Additional Context</Label>
               <Textarea 
                 value={formData.additionalInfo} 
                 onChange={e => setFormData(prev => ({...prev, additionalInfo: e.target.value}))} 
-                className="min-h-[140px] rounded-[24px] bg-secondary/30 border-none shadow-inner p-6 resize-none text-base leading-relaxed" 
-                placeholder="Describe physical discomfort, bleeding patterns, or specific concerns for neural analysis..." 
+                className="min-h-[140px] rounded-[24px] bg-secondary/50 border-none shadow-inner p-6 resize-none text-base text-black font-medium" 
+                placeholder="Any specific symptoms or concerns?" 
               />
             </div>
 
             <Button 
               type="submit" 
               disabled={isLoading} 
-              className="w-full h-16 rounded-full font-black text-xl shadow-2xl transition-all hover:scale-[1.01] active:scale-[0.98]"
+              className="w-full h-16 rounded-full font-black text-xl shadow-2xl bg-black text-white hover:bg-black/90 uppercase tracking-widest"
             >
-              {isLoading ? (
-                <>
-                  <Loader className="mr-3 h-6 w-6 animate-spin" />
-                  Processing Neural Link...
-                </>
-              ) : (
-                <>
-                  <Zap className="mr-3 h-6 w-6 fill-current" />
-                  Sync Health Matrix
-                </>
-              )}
+              {isLoading ? <Loader className="mr-3 h-6 w-6 animate-spin" /> : <Zap className="mr-3 h-6 w-6 fill-current" />}
+              {isLoading ? "Syncing..." : "Sync Matrix"}
             </Button>
           </form>
         </CardContent>

@@ -198,28 +198,28 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   if (!mounted) return null;
 
   return (
-    <div className="flex h-full flex-col w-full bg-background/50 border rounded-[32px] shadow-2xl overflow-hidden glass border-white/20">
+    <div className="flex h-full flex-col w-full bg-white/50 border rounded-[32px] shadow-2xl overflow-hidden glass border-black/5">
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
         <div className="p-6 lg:p-12 space-y-10">
           {messages.map((m) => (
             <div key={m.id} className={cn('flex items-start gap-5', m.role === 'user' && 'flex-row-reverse')}>
               <Avatar className={cn(
                 "h-10 w-10 shadow-lg border-2",
-                m.role === 'assistant' ? "bg-primary border-primary/20" : "bg-white border-white/20"
+                m.role === 'assistant' ? "bg-black border-black/10" : "bg-white border-black/10"
               )}>
                 <AvatarFallback className="text-[10px] font-black uppercase">
-                  {m.role === 'assistant' ? 'Z' : <User className="h-4 w-4 text-foreground" />}
+                  {m.role === 'assistant' ? <span className="text-white">Z</span> : <User className="h-4 w-4 text-black" />}
                 </AvatarFallback>
               </Avatar>
               <div className={cn(
-                'max-w-[80%] relative rounded-[28px] p-6 text-sm shadow-xl leading-relaxed',
+                'max-w-[80%] relative rounded-[28px] p-6 text-sm shadow-sm leading-relaxed',
                 m.role === 'user' 
-                  ? 'bg-primary text-primary-foreground font-medium rounded-tr-none' 
-                  : 'bg-white/80 backdrop-blur-md border text-foreground whitespace-pre-wrap rounded-tl-none',
-                m.urgency === 'emergency_now' && 'border-destructive border-2 bg-destructive/5'
+                  ? 'bg-black text-white font-medium rounded-tr-none' 
+                  : 'bg-white border text-black whitespace-pre-wrap rounded-tl-none font-medium',
+                m.urgency === 'emergency_now' && 'border-red-600 border-2 bg-red-50'
               )}>
                 {m.urgency === 'emergency_now' && (
-                  <div className="absolute -top-3 -left-3 bg-destructive text-white p-1 rounded-full shadow-lg">
+                  <div className="absolute -top-3 -left-3 bg-red-600 text-white p-1 rounded-full shadow-lg">
                     <ShieldAlert className="h-4 w-4" />
                   </div>
                 )}
@@ -229,12 +229,12 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
           ))}
           {isLoading && (
             <div className="flex items-start gap-5">
-              <Avatar className="h-10 w-10 bg-primary border-2 border-primary/20 shadow-lg"><AvatarFallback className="text-white">Z</AvatarFallback></Avatar>
-              <div className="bg-white/60 backdrop-blur-sm border p-5 rounded-[28px] shadow-sm rounded-tl-none">
+              <Avatar className="h-10 w-10 bg-black border-2 border-black/10 shadow-lg"><AvatarFallback className="text-white">Z</AvatarFallback></Avatar>
+              <div className="bg-white border p-5 rounded-[28px] shadow-sm rounded-tl-none">
                 <div className="flex gap-1.5 items-center">
-                  <div className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <div className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <div className="h-2 w-2 bg-primary rounded-full animate-bounce" />
+                  <div className="h-2 w-2 bg-black rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <div className="h-2 w-2 bg-black rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <div className="h-2 w-2 bg-black rounded-full animate-bounce" />
                 </div>
               </div>
             </div>
@@ -242,12 +242,12 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         </div>
       </ScrollArea>
 
-      <div className="p-8 border-t bg-white/40 backdrop-blur-xl">
+      <div className="p-8 border-t bg-white/60 backdrop-blur-xl">
         <div className="flex flex-wrap gap-2 mb-6">
           {suggestions.map((s, i) => (
             <button 
               key={i} 
-              className="bg-white/80 hover:bg-primary hover:text-white text-[10px] font-black border rounded-full px-5 h-9 transition-all duration-300 uppercase tracking-widest shadow-sm" 
+              className="bg-white hover:bg-black hover:text-white text-[10px] font-black border border-black/10 rounded-full px-5 h-9 transition-all duration-300 uppercase tracking-widest shadow-sm text-black" 
               onClick={() => submitMessage(s)}
             >
               {s}
@@ -260,12 +260,12 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Provide a health signal or ask Zera..."
-              className="resize-none bg-white pr-14 focus:ring-primary/20 min-h-[60px] max-h-[160px] py-4 px-6 border shadow-inner rounded-[24px] text-base leading-tight"
+              className="resize-none bg-white pr-14 focus:ring-black/5 min-h-[60px] max-h-[160px] py-4 px-6 border-black/10 shadow-inner rounded-[24px] text-base leading-tight text-black font-medium"
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(input); } }}
             />
             <button 
               type="submit" 
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary text-white hover:bg-primary/90 h-10 w-10 flex items-center justify-center rounded-full transition-all shadow-lg active:scale-95" 
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-black text-white hover:bg-black/80 h-10 w-10 flex items-center justify-center rounded-full transition-all shadow-lg active:scale-95" 
               disabled={isLoading || !input.trim()}
             >
               <CornerDownLeft className="h-5 w-5" />
@@ -273,49 +273,49 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
           </div>
         </form>
         <div className="mt-4 flex items-center justify-between px-2">
-           <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
-             <Siren className="h-3 w-3" /> Emergency Escallation Protocol Active
+           <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-black">
+             <Siren className="h-3 w-3 text-red-600" /> Emergency Escallation Protocol Active
            </div>
-           <Badge variant="outline" className="text-[8px] h-4 font-bold border-primary/20 text-primary bg-primary/5 uppercase">Neural Node V2.5</Badge>
+           <Badge variant="outline" className="text-[8px] h-4 font-black border-black/10 text-black bg-black/5 uppercase">Neural Node V2.5</Badge>
         </div>
       </div>
 
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
         <DialogContent className="max-w-md rounded-[40px] border-none shadow-2xl glass p-0 overflow-hidden">
-          <div className="bg-primary/10 p-10 flex flex-col items-center text-center">
+          <div className="bg-black text-white p-10 flex flex-col items-center text-center">
              <div className="bg-white p-5 rounded-[24px] shadow-lg mb-6">
-                <UserCircle className="h-10 w-10 text-primary" />
+                <UserCircle className="h-10 w-10 text-black" />
              </div>
              <DialogTitle className="text-3xl font-headline font-black">Health Identity</DialogTitle>
-             <DialogDescription className="text-muted-foreground mt-3 text-lg">
+             <DialogDescription className="text-white/70 mt-3 text-lg">
                Initialize your local recovery node.
              </DialogDescription>
           </div>
           <form onSubmit={handleSaveProfile} className="p-10 space-y-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Name</Label>
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-black ml-1">Name</Label>
               <Input 
                 placeholder="E.g., Elena" 
                 value={profileForm.name} 
                 onChange={e => setProfileForm(p => ({...p, name: e.target.value}))}
-                className="h-12 rounded-[16px] bg-secondary/30 border-none shadow-inner px-4 text-base"
+                className="h-12 rounded-[16px] bg-secondary/50 border-none shadow-inner px-4 text-base text-black font-medium"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-5">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Birth Date</Label>
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-black ml-1">Birth Date</Label>
                 <Input 
                   type="date"
                   value={profileForm.dob} 
                   onChange={e => setProfileForm(p => ({...p, dob: e.target.value}))}
-                  className="h-12 rounded-[16px] bg-secondary/30 border-none shadow-inner"
+                  className="h-12 rounded-[16px] bg-secondary/50 border-none shadow-inner text-black font-medium"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Method</Label>
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-black ml-1">Method</Label>
                 <Select value={profileForm.birthMethod} onValueChange={v => setProfileForm(p => ({...p, birthMethod: v}))}>
-                  <SelectTrigger className="h-12 rounded-[16px] bg-secondary/30 border-none shadow-inner">
+                  <SelectTrigger className="h-12 rounded-[16px] bg-secondary/50 border-none shadow-inner text-black font-medium">
                     <SelectValue placeholder="How?" />
                   </SelectTrigger>
                   <SelectContent>
@@ -327,17 +327,17 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Days since baby was born</Label>
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-black ml-1">Days since baby was born</Label>
               <Input 
                 type="number"
                 placeholder="E.g., 14"
                 value={profileForm.daysSinceBirth} 
                 onChange={e => setProfileForm(p => ({...p, daysSinceBirth: e.target.value}))}
-                className="h-12 rounded-[16px] bg-secondary/30 border-none shadow-inner"
+                className="h-12 rounded-[16px] bg-secondary/50 border-none shadow-inner text-black font-medium"
               />
             </div>
 
-            <Button type="submit" className="w-full h-14 rounded-full font-black text-lg mt-4 shadow-xl active:scale-[0.98]">
+            <Button type="submit" className="w-full h-14 rounded-full font-black text-lg mt-4 shadow-xl active:scale-[0.98] bg-black text-white hover:bg-black/90">
               Activate Monitoring
             </Button>
           </form>
