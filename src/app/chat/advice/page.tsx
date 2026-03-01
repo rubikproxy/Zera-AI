@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -33,6 +34,22 @@ export default function AdvicePage() {
 
   useEffect(() => {
     setMounted(true);
+    
+    // Check if we already have a report for today to allow modification
+    const historyRaw = localStorage.getItem(HISTORY_KEY);
+    if (historyRaw) {
+      try {
+        const history = JSON.parse(historyRaw);
+        const today = new Date().toISOString().split('T')[0];
+        const todaysEntry = history.find((entry: any) => entry.timestamp.startsWith(today));
+        
+        if (todaysEntry && todaysEntry.inputSnapshot) {
+          setFormData(todaysEntry.inputSnapshot);
+        }
+      } catch (e) {
+        console.error('Failed to load today\'s history', e);
+      }
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,20 +78,31 @@ export default function AdvicePage() {
         daysPostpartum: parseInt(profile.daysSinceBirth) || 14,
       });
 
+      const today = new Date().toISOString().split('T')[0];
       const newEntry = {
         ...result,
         patientName: profile.name,
         timestamp: new Date().toISOString(),
+        inputSnapshot: formData, // Store the form state for modification later today
       };
 
       // Save to latest
       localStorage.setItem(LATEST_RESULT_KEY, JSON.stringify(newEntry));
 
-      // Save to history
+      // Update History - Replace if today exists, otherwise add
       const historyRaw = localStorage.getItem(HISTORY_KEY);
-      const history = historyRaw ? JSON.parse(historyRaw) : [];
-      localStorage.setItem(HISTORY_KEY, JSON.stringify([newEntry, ...history].slice(0, 30)));
+      let history = historyRaw ? JSON.parse(historyRaw) : [];
+      
+      const existingTodayIndex = history.findIndex((entry: any) => entry.timestamp.startsWith(today));
+      if (existingTodayIndex > -1) {
+        history[existingTodayIndex] = newEntry;
+      } else {
+        history = [newEntry, ...history];
+      }
+      
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 30)));
 
+      toast({ title: 'Monitoring Sync Complete', description: 'Your health dashboard has been updated.' });
       router.push('/chat/results');
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Monitoring Error', description: e.message || 'Failed to generate status.' });
@@ -99,9 +127,9 @@ export default function AdvicePage() {
               <Activity className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-headline font-bold text-foreground">Daily <span className="text-primary">Check-in</span></CardTitle>
+          <CardTitle className="text-3xl font-headline font-bold text-foreground">Daily <span className="text-primary italic">Check-in</span></CardTitle>
           <CardDescription className="text-muted-foreground text-base mt-2">
-            Record your health signals for AI-powered monitoring.
+            Record your recovery signals. Today's data can be modified anytime.
           </CardDescription>
         </CardHeader>
         <CardContent className="px-8 pb-12 pt-6">
@@ -110,14 +138,14 @@ export default function AdvicePage() {
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">How is your health today?</Label>
                 <Input 
-                  placeholder="E.g. Feeling better, slight pain..." 
+                  placeholder="e.g. Feeling strong, slight discomfort..." 
                   value={formData.healthStatus} 
                   onChange={e => setFormData(prev => ({...prev, healthStatus: e.target.value}))} 
                   className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner px-4" 
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">How do you feel?</Label>
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Current Mood Status</Label>
                 <Select value={formData.mood} onValueChange={v => setFormData(p => ({...p, mood: v}))}>
                   <SelectTrigger className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner">
                     <SelectValue placeholder="Mood" />
@@ -183,12 +211,12 @@ export default function AdvicePage() {
             </div>
             
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Any other details?</Label>
+              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Additional Recovery Context</Label>
               <Textarea 
                 value={formData.additionalInfo} 
                 onChange={e => setFormData(prev => ({...prev, additionalInfo: e.target.value}))} 
                 className="min-h-[120px] rounded-2xl bg-secondary/30 border-none shadow-inner p-4 resize-none" 
-                placeholder="Talk about your recovery progress..." 
+                placeholder="Share more about how you are feeling today..." 
               />
             </div>
 
@@ -200,10 +228,10 @@ export default function AdvicePage() {
               {isLoading ? (
                 <>
                   <Loader className="mr-2 h-5 w-5 animate-spin" />
-                  Analyzing Signals...
+                  Analyzing Digital Twin...
                 </>
               ) : (
-                'Synchronize Health Data'
+                'Sync Health Report'
               )}
             </Button>
           </form>

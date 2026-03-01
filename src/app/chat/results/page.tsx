@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -99,9 +100,15 @@ const RadarAnalysis = ({ scores }: { scores: HealthResult['scores'] }) => {
 };
 
 const HistoryTrend = ({ history }: { history: any[] }) => {
-  if (!history || history.length === 0) return <div className="h-[200px] flex items-center justify-center text-muted-foreground text-xs italic">Not enough historical data yet.</div>;
+  if (!history || history.length < 2) {
+    return (
+      <div className="h-[200px] flex items-center justify-center text-muted-foreground text-xs italic bg-secondary/10 rounded-xl">
+        Submit more Daily Check-ins to visualize your 7-day trend.
+      </div>
+    );
+  }
   
-  const data = history.slice(0, 7).reverse().map((entry, idx) => ({
+  const data = history.slice(0, 7).reverse().map((entry) => ({
     name: new Date(entry.timestamp).toLocaleDateString('en-US', { weekday: 'short' }),
     physical: entry.scores?.physical || 0,
     mental: entry.scores?.mental || 0,
@@ -154,13 +161,16 @@ export default function ResultsPage() {
     }
   }, []);
 
-  if (!mounted || !result) {
+  if (!mounted) return null;
+
+  if (!result) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-center space-y-4">
-          <Activity className="h-12 w-12 text-primary animate-pulse mx-auto" />
-          <h1 className="text-2xl font-headline font-semibold">Synchronizing Dashboard...</h1>
-          <Button onClick={() => router.push('/chat/advice')} variant="outline">
+        <div className="text-center space-y-6 max-w-md p-8 glass rounded-[40px]">
+          <Activity className="h-16 w-16 text-primary animate-pulse mx-auto" />
+          <h1 className="text-3xl font-headline font-bold">No Monitor Active</h1>
+          <p className="text-muted-foreground">Please complete your Daily Check-in to initialize the monitoring system.</p>
+          <Button onClick={() => router.push('/chat/advice')} className="w-full h-14 rounded-full font-bold text-lg shadow-lg">
             Start Daily Check-in
           </Button>
         </div>
@@ -177,7 +187,7 @@ export default function ResultsPage() {
         </Button>
         <div className="flex items-center gap-3">
           <Badge variant="outline" className="px-3 py-0.5 rounded-full border-primary/20 text-primary bg-primary/5 text-[9px] font-bold uppercase tracking-widest">
-            Digital Twin Active
+            Identity Node Synced
           </Badge>
           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
         </div>
@@ -203,7 +213,7 @@ export default function ResultsPage() {
            </Card>
            <Card className="border-none glass shadow-sm p-5 text-center flex flex-col items-center gap-2">
               <div className="p-2 bg-blue-50 rounded-xl"><Droplets className="h-5 w-5 text-blue-500" /></div>
-              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">BP</span>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">BP Est.</span>
               <div className="text-2xl font-bold">{result.metrics?.bloodPressure || '--/--'}</div>
            </Card>
         </div>
@@ -221,14 +231,14 @@ export default function ResultsPage() {
                <div className="text-5xl mb-4">{result.metrics?.stressLevel === 'Stress' ? '😔' : '😊'}</div>
                <div className="text-2xl font-bold text-foreground">{result.metrics?.stressLevel || 'Monitoring...'}</div>
                <Badge className={result.metrics?.stressLevel === 'Stress' ? 'bg-orange-500 mt-2' : 'bg-green-500 mt-2'}>
-                 System Stable
+                 System Consistent
                </Badge>
             </CardContent>
           </Card>
 
           <Card className="border-none glass shadow-md">
             <CardHeader className="pb-0">
-               <CardTitle className="text-base font-headline">Recovery Scoring Matrix</CardTitle>
+               <CardTitle className="text-base font-headline">Recovery Score Matrix</CardTitle>
             </CardHeader>
             <CardContent>
               <RadarAnalysis scores={result.scores} />
@@ -240,13 +250,13 @@ export default function ResultsPage() {
         <div className="lg:col-span-8 space-y-6">
           <div className="flex flex-col gap-1 mb-2">
             <h1 className="text-3xl font-headline font-bold text-foreground">Health <span className="text-primary italic">Status Portal</span></h1>
-            <p className="text-muted-foreground text-sm">Monitoring report for {result.patientName} • Updated {new Date(result.timestamp).toLocaleTimeString()}</p>
+            <p className="text-muted-foreground text-sm">Monitoring report for {result.patientName} • Sync Date {new Date(result.timestamp).toLocaleDateString()}</p>
           </div>
 
           <Card className="border-none glass shadow-md p-6">
              <CardTitle className="text-base font-headline flex items-center gap-2 mb-4">
                 <Calendar className="h-4 w-4 text-primary" />
-                7-Day Monitoring Trend
+                7-Day Recovery Trend
              </CardTitle>
              <HistoryTrend history={history} />
              <div className="flex justify-center gap-4 mt-2 text-[10px] font-bold uppercase text-muted-foreground">
@@ -266,7 +276,7 @@ export default function ResultsPage() {
              <Card className="border-none glass shadow-sm p-5">
                 <div className="flex items-center gap-3 mb-3">
                    <div className="bg-primary/10 p-2 rounded-lg"><Clock className="h-4 w-4 text-primary" /></div>
-                   <h4 className="font-headline font-bold text-sm">Movement Targets</h4>
+                   <h4 className="font-headline font-bold text-sm">Targeted Movement</h4>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">{result.exerciseAdvice}</p>
              </Card>
@@ -275,7 +285,7 @@ export default function ResultsPage() {
           <Accordion type="single" collapsible className="space-y-3">
             <AccordionItem value="nutrition" className="border-none glass rounded-2xl overflow-hidden px-1">
               <AccordionTrigger className="hover:no-underline py-4 px-5">
-                <span className="font-headline text-base font-bold">Nutrition & Hydration Protocol</span>
+                <span className="font-headline text-base font-bold">Nutrition & Energy Balance</span>
               </AccordionTrigger>
               <AccordionContent className="px-5 pb-5 text-muted-foreground text-sm leading-relaxed">
                 {result.nutritionAdvice}
@@ -283,7 +293,7 @@ export default function ResultsPage() {
             </AccordionItem>
             <AccordionItem value="mental" className="border-none glass rounded-2xl overflow-hidden px-1">
               <AccordionTrigger className="hover:no-underline py-4 px-5">
-                <span className="font-headline text-base font-bold">Wellness Recommendations</span>
+                <span className="font-headline text-base font-bold">Psychological Support</span>
               </AccordionTrigger>
               <AccordionContent className="px-5 pb-5 text-muted-foreground text-sm leading-relaxed">
                 {result.mentalWellbeingAdvice}
