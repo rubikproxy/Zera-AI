@@ -6,21 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Heart,
-  Moon,
-  Brain,
   ChevronLeft,
   Activity,
-  Droplets,
-  Clock,
-  Footprints,
-  Calendar,
-  Zap,
-  AlertCircle,
-  Stethoscope,
   TrendingUp,
   ShieldAlert,
-  ArrowRight
 } from 'lucide-react';
 import {
   PolarAngleAxis,
@@ -119,7 +108,7 @@ const HistoryTrend = ({ history }: { history: any[] }) => {
     return (
       <div className="h-[240px] flex flex-col items-center justify-center text-black/40 text-center gap-3 bg-secondary/50 rounded-[32px] border border-dashed p-8">
         <TrendingUp className="h-8 w-8 opacity-20" />
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black">Trend Data Pending</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black">🤔 Trend Data Pending</p>
       </div>
     );
   }
@@ -180,9 +169,9 @@ export default function ResultsPage() {
       <div className="flex h-[80vh] items-center justify-center">
         <div className="text-center space-y-8 max-w-lg p-12 glass rounded-[48px] shadow-2xl">
           <Activity className="h-20 w-20 text-black mx-auto animate-pulse" />
-          <h1 className="text-4xl font-headline font-black text-black uppercase">No Status</h1>
+          <h1 className="text-4xl font-headline font-black text-black uppercase">🤔 No Status</h1>
           <Button onClick={() => router.push('/chat/advice')} className="w-full h-16 rounded-full font-black text-xl bg-black text-white hover:bg-black/90 uppercase tracking-widest">
-            Start Check-in
+            🚀 Start Check-in
           </Button>
         </div>
       </div>
@@ -225,10 +214,10 @@ export default function ResultsPage() {
                     <ShieldAlert className="h-8 w-8" />
                   </div>
                   <div className="flex-1 space-y-1">
-                    <AlertTitle className="font-headline font-black text-2xl text-black uppercase">{alert.title}</AlertTitle>
+                    <AlertTitle className="font-headline font-black text-2xl text-black uppercase">⚠️ {alert.title}</AlertTitle>
                     <AlertDescription className="text-base text-black font-medium">{alert.message}</AlertDescription>
                     <div className="mt-5 text-sm font-black uppercase tracking-tight text-black">
-                      Action: <span className="text-primary">{alert.action}</span>
+                      🎯 Action: <span className="text-primary">{alert.action}</span>
                     </div>
                   </div>
                 </div>
@@ -239,18 +228,16 @@ export default function ResultsPage() {
 
         <div className="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-6">
            {[
-             { label: 'Heart Rate', value: result.metrics?.heartRate, unit: 'BPM', icon: Heart, color: 'text-black' },
-             { label: 'Sleep', value: result.metrics?.sleepHours, unit: 'HRS', icon: Moon, color: 'text-black' },
-             { label: 'Steps', value: result.metrics?.steps ? (result.metrics.steps / 1000).toFixed(1) : '--', unit: 'K', icon: Footprints, color: 'text-black' },
-             { label: 'BP', value: result.metrics?.bloodPressure, unit: 'EST', icon: Droplets, color: 'text-black' }
+             { label: 'Heart Rate', value: result.metrics?.heartRate, unit: 'BPM', emoji: '❤️' },
+             { label: 'Sleep', value: result.metrics?.sleepHours, unit: 'HRS', emoji: '💤' },
+             { label: 'Steps', value: result.metrics?.steps ? (result.metrics.steps / 1000).toFixed(1) : '--', unit: 'K', emoji: '👣' },
+             { label: 'Blood Pressure', value: result.metrics?.bloodPressure, unit: 'EST', emoji: '🩺' }
            ].map((m, i) => (
-             <Card key={i} className="border-none glass shadow-xl rounded-[32px] p-8 text-center">
-                <div className="p-4 rounded-[22px] w-fit mx-auto mb-6 bg-secondary/50">
-                  <m.icon className={cn("h-7 w-7", m.color)} />
-                </div>
+             <Card key={i} className="border-none glass shadow-xl rounded-[32px] p-8 text-center transition-all hover:-translate-y-1">
+                <div className="text-4xl mb-6">{m.emoji}</div>
                 <div className="space-y-1">
                   <span className="text-[10px] font-black uppercase tracking-[0.25em] text-black/40">{m.label}</span>
-                  <div className="text-4xl font-bold text-black font-body">{m.value || '--'}</div>
+                  <div className="text-4xl font-black text-black">{m.value || '--'}</div>
                   <span className="text-[10px] font-black text-black/40 uppercase">{m.unit}</span>
                 </div>
              </Card>
@@ -258,15 +245,15 @@ export default function ResultsPage() {
         </div>
 
         <div className="lg:col-span-4 space-y-8">
-          <Card className="border-none glass shadow-xl rounded-[40px] text-center p-10">
-               <div className="text-7xl mb-6">{result.metrics?.stressLevel === 'Stress' ? '🌪️' : '✨'}</div>
-               <div className="text-3xl font-black text-black uppercase">{result.metrics?.stressLevel || 'Unknown'}</div>
-               <Badge className="mt-3 px-4 py-1 uppercase text-[10px] font-black bg-black text-white rounded-full">Inferred Stress</Badge>
+          <Card className="border-none glass shadow-xl rounded-[48px] text-center p-12 transition-all hover:-translate-y-1">
+               <div className="text-8xl mb-8 drop-shadow-sm">{result.metrics?.stressLevel === 'Stress' ? '🌪️' : '✨'}</div>
+               <h2 className="text-4xl font-black text-black uppercase tracking-tight mb-4">{result.metrics?.stressLevel || 'Unknown'}</h2>
+               <Badge className="px-6 py-2 uppercase text-[10px] font-black bg-black text-white rounded-full border-none">Inferred Stress</Badge>
           </Card>
 
           <Card className="border-none glass shadow-xl rounded-[40px] p-8">
             <CardHeader className="pb-0 pt-0 px-0 mb-4">
-               <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-black">Recovery Index</CardTitle>
+               <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-black">📊 Recovery Index</CardTitle>
             </CardHeader>
             <RadarAnalysis scores={result.scores} />
             <div className="grid grid-cols-2 gap-2 mt-4">
@@ -282,19 +269,19 @@ export default function ResultsPage() {
 
         <div className="lg:col-span-8 space-y-8">
           <Card className="border-none glass shadow-xl rounded-[40px] p-10">
-             <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-black">7D Recovery Trend</CardTitle>
+             <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-black">📈 7D Recovery Trend</CardTitle>
              <HistoryTrend history={history} />
           </Card>
 
           <div className="grid md:grid-cols-2 gap-6">
              {[
-               { title: 'Recovery Advice', advice: result.recoveryAdvice, icon: Brain },
-               { title: 'Activity Plan', advice: result.exerciseAdvice, icon: Clock }
+               { title: 'Recovery Advice', advice: result.recoveryAdvice, emoji: '🧠' },
+               { title: 'Activity Plan', advice: result.exerciseAdvice, emoji: '🏃‍♀️' }
              ].map((box, i) => (
                <Card key={i} className="border-none glass shadow-xl p-8 rounded-[40px] flex flex-col gap-4">
                   <div className="flex items-center gap-4">
                      <div className="bg-black text-white p-3 rounded-[18px]">
-                        <box.icon className="h-5 w-5" />
+                        <span className="text-xl">{box.emoji}</span>
                      </div>
                      <h4 className="font-headline font-black text-xl text-black uppercase">{box.title}</h4>
                   </div>
@@ -305,8 +292,8 @@ export default function ResultsPage() {
 
           <Accordion type="single" collapsible className="space-y-4">
             {[
-              { id: 'nutrition', title: 'Nutrition Matrix', content: result.nutritionAdvice },
-              { id: 'mental', title: 'Mental Wellbeing', content: result.mentalWellbeingAdvice }
+              { id: 'nutrition', title: '🍎 Nutrition Matrix', content: result.nutritionAdvice },
+              { id: 'mental', title: '🧘‍♀️ Mental Wellbeing', content: result.mentalWellbeingAdvice }
             ].map((acc) => (
               <AccordionItem key={acc.id} value={acc.id} className="border-none glass rounded-[32px] overflow-hidden px-2 shadow-lg">
                 <AccordionTrigger className="hover:no-underline py-6 px-6 [&>svg]:text-black">

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getPersonalizedAdvice } from '@/app/actions';
-import { Activity, Loader, ChevronLeft, Heart, Moon, Footprints, Droplets, Zap, ShieldAlert } from 'lucide-react';
+import { Loader, ChevronLeft, Zap, ShieldAlert } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const LATEST_RESULT_KEY = 'zera_latest_result';
@@ -56,12 +56,12 @@ export default function AdvicePage() {
     if (bp.includes('/')) {
       const systolic = parseInt(bp.split('/')[0]);
       if (systolic >= 160) {
-        setTriageAlert("Critical: Your blood pressure is very high (≥160 systolic). This requires immediate medical attention.");
+        setTriageAlert("🚨 Critical: Your blood pressure is very high (≥160 systolic). This requires immediate medical attention.");
         return;
       }
     }
     if (hr > 120) {
-      setTriageAlert("Critical: Your heart rate is very high (>120 BPM). Please rest and contact a professional.");
+      setTriageAlert("🚨 Critical: Your heart rate is very high (>120 BPM). Please rest and contact a professional.");
       return;
     }
     setTriageAlert(null);
@@ -108,10 +108,10 @@ export default function AdvicePage() {
       }
       localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory.slice(0, 30)));
 
-      toast({ title: 'Monitoring Sync Complete' });
+      toast({ title: '✅ Monitoring Sync Complete' });
       router.push('/chat/results');
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
+      toast({ variant: 'destructive', title: '❌ Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +133,7 @@ export default function AdvicePage() {
               <ShieldAlert className="h-8 w-8" />
             </div>
             <div>
-              <AlertTitle className="text-2xl font-black uppercase tracking-tight mb-2 text-black">Action Required</AlertTitle>
+              <AlertTitle className="text-2xl font-black uppercase tracking-tight mb-2 text-black">⚠️ Action Required</AlertTitle>
               <AlertDescription className="text-base font-medium text-black">{triageAlert}</AlertDescription>
             </div>
           </div>
@@ -142,14 +142,14 @@ export default function AdvicePage() {
 
       <Card className="border-none glass shadow-2xl rounded-[48px] overflow-hidden">
         <CardHeader className="text-center pb-6 pt-12 px-10">
-          <CardTitle className="text-4xl font-headline font-black text-black tracking-tight uppercase">Daily <span className="text-primary italic">Sync</span></CardTitle>
+          <CardTitle className="text-4xl font-headline font-black text-black tracking-tight uppercase">📅 Daily <span className="text-primary italic">Sync</span></CardTitle>
           <CardDescription className="text-black/60 text-lg mt-3 font-medium">Update clinical signals for monitoring.</CardDescription>
         </CardHeader>
         <CardContent className="px-10 pb-16 pt-8">
           <form onSubmit={handleSubmit} className="space-y-10">
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-black ml-2">Health Statement</Label>
+                <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-black ml-2">🏥 Health Statement</Label>
                 <Input 
                   placeholder="How is your health today?" 
                   value={formData.healthStatus} 
@@ -158,16 +158,16 @@ export default function AdvicePage() {
                 />
               </div>
               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-black ml-2">Current Mood</Label>
+                <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-black ml-2">✨ Current Mood</Label>
                 <Select value={formData.mood} onValueChange={v => setFormData(p => ({...p, mood: v}))}>
                   <SelectTrigger className="h-14 rounded-[20px] bg-secondary/50 border-none shadow-inner px-6 text-black font-medium">
                     <SelectValue placeholder="Mood" />
                   </SelectTrigger>
                   <SelectContent className="rounded-[20px]">
-                    <SelectItem value="happy">Happy</SelectItem>
-                    <SelectItem value="stressed">Stressed</SelectItem>
-                    <SelectItem value="tired">Tired</SelectItem>
-                    <SelectItem value="sad">Sad</SelectItem>
+                    <SelectItem value="happy">😊 Happy</SelectItem>
+                    <SelectItem value="stressed">🌪️ Stressed</SelectItem>
+                    <SelectItem value="tired">🥱 Tired</SelectItem>
+                    <SelectItem value="sad">😢 Sad</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -175,14 +175,14 @@ export default function AdvicePage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
               {[
-                { label: 'Sleep', icon: Moon, key: 'sleepHours', placeholder: '8', unit: 'Hrs' },
-                { label: 'Heart Rate', icon: Heart, key: 'heartRate', placeholder: '72', unit: 'BPM' },
-                { label: 'Steps', icon: Footprints, key: 'steps', placeholder: '2000', unit: 'Count' },
-                { label: 'BP', icon: Droplets, key: 'bloodPressure', placeholder: '120/80', unit: 'S/D' }
+                { label: 'Sleep', emoji: '💤', key: 'sleepHours', placeholder: '8', unit: 'Hrs' },
+                { label: 'Heart Rate', emoji: '❤️', key: 'heartRate', placeholder: '72', unit: 'BPM' },
+                { label: 'Steps', emoji: '👣', key: 'steps', placeholder: '2000', unit: 'Count' },
+                { label: 'BP', emoji: '🩺', key: 'bloodPressure', placeholder: '120/80', unit: 'S/D' }
               ].map((field) => (
                 <div key={field.key} className="space-y-3">
                   <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-black flex items-center gap-2 ml-1">
-                    <field.icon className="h-3 w-3 text-primary" /> {field.label}
+                    <span className="text-xs">{field.emoji}</span> {field.label}
                   </Label>
                   <div className="relative">
                     <Input 
@@ -199,7 +199,7 @@ export default function AdvicePage() {
             </div>
             
             <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-black ml-2">Additional Context</Label>
+              <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-black ml-2">💬 Additional Context</Label>
               <Textarea 
                 value={formData.additionalInfo} 
                 onChange={e => setFormData(prev => ({...prev, additionalInfo: e.target.value}))} 
@@ -211,10 +211,10 @@ export default function AdvicePage() {
             <Button 
               type="submit" 
               disabled={isLoading} 
-              className="w-full h-16 rounded-full font-black text-xl shadow-2xl bg-black text-white hover:bg-black/90 uppercase tracking-widest"
+              className="w-full h-16 rounded-full font-black text-xl shadow-2xl bg-black text-white hover:bg-black/90 uppercase tracking-widest transition-transform active:scale-95"
             >
               {isLoading ? <Loader className="mr-3 h-6 w-6 animate-spin" /> : <Zap className="mr-3 h-6 w-6 fill-current" />}
-              {isLoading ? "Syncing..." : "Sync Matrix"}
+              {isLoading ? "🔄 Syncing..." : "🚀 Sync Matrix"}
             </Button>
           </form>
         </CardContent>
