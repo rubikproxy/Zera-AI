@@ -2,8 +2,6 @@
 
 import {
   getEmpatheticResponse,
-  getEmergencyEscalation,
-  getSymptomUnderstanding,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,6 +13,8 @@ import {
   Loader,
   User,
   UserCircle,
+  Siren,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   forwardRef,
@@ -36,6 +36,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 const STORAGE_KEY = 'zera_chat_history_v2';
 const PROFILE_KEY = 'zera_user_profile';
@@ -44,6 +45,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  urgency?: string;
 }
 
 export interface ChatHandle {
@@ -58,6 +60,11 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   const [escalationMessage, setEscalationMessage] = useState('');
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([
+    "How should I manage recovery today?",
+    "I'm feeling a bit tired.",
+    "Is my bleeding normal?",
+  ]);
   
   const [profileForm, setProfileForm] = useState({
     name: '',
@@ -81,7 +88,6 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
       try {
         setProfileForm(JSON.parse(savedProfile));
       } catch (e) {
-        console.error('Failed to parse profile');
         setShowProfileDialog(true);
       }
     }
@@ -90,11 +96,8 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     if (savedHistory) {
       try {
         const parsed = JSON.parse(savedHistory);
-        const validMessages = (parsed as Message[]).filter(m => 
-          m && typeof m.content === 'string' && m.id && m.role
-        );
-        if (validMessages.length > 0) {
-          setMessages(validMessages);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
         } else {
           getInitialGreeting();
         }
@@ -114,32 +117,25 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     }
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profileForm));
     setShowProfileDialog(false);
-    
-    if (messages.length === 0) {
-      getInitialGreeting();
-    }
+    if (messages.length === 0) getInitialGreeting();
   };
 
   const getInitialGreeting = async () => {
     setIsLoading(true);
     try {
       const resp = await getEmpatheticResponse({
-        userInput: 'Introduce Zera, the futuristic AI postpartum health assistant.',
-        context: 'First interaction.',
+        userInput: 'Initialize Zera AI Postpartum Monitoring Node.',
+        context: 'First session start.',
+        language: 'English'
       });
       setMessages([{ id: 'init', role: 'assistant', content: resp.response }]);
+      if (resp.route.next_question) setSuggestions([resp.route.next_question]);
     } catch (e) {
-      setMessages([{ id: 'err', role: 'assistant', content: 'I am Zera, your postpartum monitoring assistant.' }]);
+      setMessages([{ id: 'err', role: 'assistant', content: 'Zera Node Online. How can I assist your recovery today?' }]);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const suggestions = [
-    "How should I manage recovery today?",
-    "I'm feeling a bit tired.",
-    "Is my bleeding normal?",
-  ];
 
   useImperativeHandle(ref, () => ({
     handleDailyCheckIn: () => {
@@ -149,9 +145,9 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
       }
     }
   }, [messages, isLoading]);
@@ -160,26 +156,40 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     if (!text.trim() || isLoading) return;
     setIsLoading(true);
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text };
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedMessages));
+    const history = [...messages, userMsg];
+    setMessages(history);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     setInput('');
 
     try {
-      const understanding = await getSymptomUnderstanding({ symptomsDescription: text });
-      if (understanding.urgencyLevel === 'high') {
-        const esc = await getEmergencyEscalation({ symptoms: text, patientId: 'local-user', timestamp: new Date().toISOString() });
-        setEscalationMessage(esc.escalationMessage);
+      const contextString = history.slice(-5).map(m => `${m.role}: ${m.content}`).join('\n');
+      const result = await getEmpatheticResponse({ 
+        userInput: text, 
+        context: contextString,
+        language: 'English'
+      });
+
+      if (result.route.urgency === 'emergency_now') {
+        setEscalationMessage(result.response);
         setIsEmergency(true);
-      } else {
-        const resp = await getEmpatheticResponse({ userInput: text, context: 'Monitoring Active.' });
-        const assistantMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: resp.response };
-        const finalMessages = [...updatedMessages, assistantMsg];
-        setMessages(finalMessages);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(finalMessages));
+      }
+
+      const assistantMsg: Message = { 
+        id: (Date.now() + 1).toString(), 
+        role: 'assistant', 
+        content: result.response,
+        urgency: result.route.urgency 
+      };
+      
+      const finalHistory = [...history, assistantMsg];
+      setMessages(finalHistory);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(finalHistory));
+
+      if (result.route.next_question) {
+        setSuggestions([result.route.next_question, "Tell me more about this.", "What should I do next?"]);
       }
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message || 'Failed to process signal.' });
+      toast({ variant: 'destructive', title: 'Neural Link Error', description: 'Failed to process signal. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -188,98 +198,125 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   if (!mounted) return null;
 
   return (
-    <>
-      <div className="flex h-full flex-col w-full bg-background border rounded-[30px] shadow-xl overflow-hidden glass">
-        <ScrollArea className="flex-1" ref={scrollAreaRef}>
-          <div className="p-6 lg:p-10 space-y-8">
-            {messages.map((m) => (
-              <div key={m.id} className={cn('flex items-start gap-4', m.role === 'user' && 'flex-row-reverse')}>
-                <Avatar className="h-9 w-9 bg-background shadow-sm shrink-0 border">
-                  <AvatarFallback className="bg-transparent text-primary font-bold text-xs uppercase">
-                    {m.role === 'assistant' ? 'Z' : <User className="h-4 w-4" />}
-                  </AvatarFallback>
-                </Avatar>
-                <div className={cn(
-                  'max-w-[85%] rounded-[24px] p-5 text-sm shadow-sm leading-relaxed',
-                  m.role === 'user' 
-                    ? 'bg-primary text-primary-foreground font-medium rounded-tr-none' 
-                    : 'bg-white border text-foreground whitespace-pre-wrap rounded-tl-none'
-                )}>
-                  {m.content}
+    <div className="flex h-full flex-col w-full bg-background/50 border rounded-[32px] shadow-2xl overflow-hidden glass border-white/20">
+      <ScrollArea className="flex-1" ref={scrollAreaRef}>
+        <div className="p-6 lg:p-12 space-y-10">
+          {messages.map((m) => (
+            <div key={m.id} className={cn('flex items-start gap-5', m.role === 'user' && 'flex-row-reverse')}>
+              <Avatar className={cn(
+                "h-10 w-10 shadow-lg border-2",
+                m.role === 'assistant' ? "bg-primary border-primary/20" : "bg-white border-white/20"
+              )}>
+                <AvatarFallback className="text-[10px] font-black uppercase">
+                  {m.role === 'assistant' ? 'Z' : <User className="h-4 w-4 text-foreground" />}
+                </AvatarFallback>
+              </Avatar>
+              <div className={cn(
+                'max-w-[80%] relative rounded-[28px] p-6 text-sm shadow-xl leading-relaxed',
+                m.role === 'user' 
+                  ? 'bg-primary text-primary-foreground font-medium rounded-tr-none' 
+                  : 'bg-white/80 backdrop-blur-md border text-foreground whitespace-pre-wrap rounded-tl-none',
+                m.urgency === 'emergency_now' && 'border-destructive border-2 bg-destructive/5'
+              )}>
+                {m.urgency === 'emergency_now' && (
+                  <div className="absolute -top-3 -left-3 bg-destructive text-white p-1 rounded-full shadow-lg">
+                    <ShieldAlert className="h-4 w-4" />
+                  </div>
+                )}
+                {m.content}
+              </div>
+            </div>
+          ))}
+          {isLoading && (
+            <div className="flex items-start gap-5">
+              <Avatar className="h-10 w-10 bg-primary border-2 border-primary/20 shadow-lg"><AvatarFallback className="text-white">Z</AvatarFallback></Avatar>
+              <div className="bg-white/60 backdrop-blur-sm border p-5 rounded-[28px] shadow-sm rounded-tl-none">
+                <div className="flex gap-1.5 items-center">
+                  <div className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <div className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <div className="h-2 w-2 bg-primary rounded-full animate-bounce" />
                 </div>
               </div>
-            ))}
-            {isLoading && (
-              <div className="flex items-start gap-4">
-                <Avatar className="border h-9 w-9 shrink-0"><AvatarFallback>Z</AvatarFallback></Avatar>
-                <div className="bg-white border p-4 rounded-[24px] shadow-sm rounded-tl-none"><Loader className="h-4 w-4 animate-spin text-primary" /></div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-
-        <div className="p-6 border-t bg-white/40">
-          <div className="flex flex-wrap gap-2 mb-4">
-            {suggestions.map((s, i) => (
-              <button key={i} className="bg-white hover:bg-primary/5 text-[10px] font-bold border rounded-full px-4 h-8 transition-colors uppercase tracking-tight" onClick={() => submitMessage(s)}>
-                {s}
-              </button>
-            ))}
-          </div>
-          <form onSubmit={(e) => { e.preventDefault(); submitMessage(input); }} className="relative flex items-center gap-2">
-            <div className="flex-1 relative">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Talk to Zera..."
-                className="resize-none bg-white pr-12 focus:ring-primary/20 min-h-[50px] max-h-[150px] py-3 px-5 border shadow-inner rounded-[24px] text-sm"
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(input); } }}
-              />
-              <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-primary hover:bg-primary/10 h-8 w-8 flex items-center justify-center rounded-full transition-colors" disabled={isLoading || !input.trim()}>
-                <CornerDownLeft className="h-5 w-5" />
-              </button>
             </div>
-          </form>
+          )}
+        </div>
+      </ScrollArea>
+
+      <div className="p-8 border-t bg-white/40 backdrop-blur-xl">
+        <div className="flex flex-wrap gap-2 mb-6">
+          {suggestions.map((s, i) => (
+            <button 
+              key={i} 
+              className="bg-white/80 hover:bg-primary hover:text-white text-[10px] font-black border rounded-full px-5 h-9 transition-all duration-300 uppercase tracking-widest shadow-sm" 
+              onClick={() => submitMessage(s)}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); submitMessage(input); }} className="relative flex items-center gap-3">
+          <div className="flex-1 relative">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Provide a health signal or ask Zera..."
+              className="resize-none bg-white pr-14 focus:ring-primary/20 min-h-[60px] max-h-[160px] py-4 px-6 border shadow-inner rounded-[24px] text-base leading-tight"
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(input); } }}
+            />
+            <button 
+              type="submit" 
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary text-white hover:bg-primary/90 h-10 w-10 flex items-center justify-center rounded-full transition-all shadow-lg active:scale-95" 
+              disabled={isLoading || !input.trim()}
+            >
+              <CornerDownLeft className="h-5 w-5" />
+            </button>
+          </div>
+        </form>
+        <div className="mt-4 flex items-center justify-between px-2">
+           <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
+             <Siren className="h-3 w-3" /> Emergency Escallation Protocol Active
+           </div>
+           <Badge variant="outline" className="text-[8px] h-4 font-bold border-primary/20 text-primary bg-primary/5 uppercase">Neural Node V2.5</Badge>
         </div>
       </div>
 
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-        <DialogContent className="max-w-md rounded-[32px] border-none shadow-2xl glass p-0 overflow-hidden">
-          <div className="bg-primary/5 p-8 flex flex-col items-center text-center">
-             <div className="bg-white p-4 rounded-2xl shadow-sm mb-4">
-                <UserCircle className="h-8 w-8 text-primary" />
+        <DialogContent className="max-w-md rounded-[40px] border-none shadow-2xl glass p-0 overflow-hidden">
+          <div className="bg-primary/10 p-10 flex flex-col items-center text-center">
+             <div className="bg-white p-5 rounded-[24px] shadow-lg mb-6">
+                <UserCircle className="h-10 w-10 text-primary" />
              </div>
-             <DialogTitle className="text-2xl font-headline font-bold">Health Identity Setup</DialogTitle>
-             <DialogDescription className="text-muted-foreground mt-2">
-               Welcome. Please initialize your health profile to begin monitoring.
+             <DialogTitle className="text-3xl font-headline font-black">Health Identity</DialogTitle>
+             <DialogDescription className="text-muted-foreground mt-3 text-lg">
+               Initialize your local recovery node.
              </DialogDescription>
           </div>
-          <form onSubmit={handleSaveProfile} className="p-8 space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Name</Label>
+          <form onSubmit={handleSaveProfile} className="p-10 space-y-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Name</Label>
               <Input 
                 placeholder="E.g., Elena" 
                 value={profileForm.name} 
                 onChange={e => setProfileForm(p => ({...p, name: e.target.value}))}
-                className="h-10 rounded-xl bg-secondary/20 border-none shadow-inner"
+                className="h-12 rounded-[16px] bg-secondary/30 border-none shadow-inner px-4 text-base"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Birthday</Label>
+            <div className="grid grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Birth Date</Label>
                 <Input 
                   type="date"
                   value={profileForm.dob} 
                   onChange={e => setProfileForm(p => ({...p, dob: e.target.value}))}
-                  className="h-10 rounded-xl bg-secondary/20 border-none shadow-inner"
+                  className="h-12 rounded-[16px] bg-secondary/30 border-none shadow-inner"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">How did you give birth?</Label>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Method</Label>
                 <Select value={profileForm.birthMethod} onValueChange={v => setProfileForm(p => ({...p, birthMethod: v}))}>
-                  <SelectTrigger className="h-10 rounded-xl bg-secondary/20 border-none shadow-inner">
-                    <SelectValue placeholder="Method" />
+                  <SelectTrigger className="h-12 rounded-[16px] bg-secondary/30 border-none shadow-inner">
+                    <SelectValue placeholder="How?" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="natural">Naturally</SelectItem>
@@ -289,26 +326,26 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">How many days has it been since your baby was born?</Label>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Days since baby was born</Label>
               <Input 
                 type="number"
                 placeholder="E.g., 14"
                 value={profileForm.daysSinceBirth} 
                 onChange={e => setProfileForm(p => ({...p, daysSinceBirth: e.target.value}))}
-                className="h-10 rounded-xl bg-secondary/20 border-none shadow-inner"
+                className="h-12 rounded-[16px] bg-secondary/30 border-none shadow-inner"
               />
             </div>
 
-            <Button type="submit" className="w-full h-11 rounded-full font-bold mt-4 shadow-lg">
-              Start Monitoring
+            <Button type="submit" className="w-full h-14 rounded-full font-black text-lg mt-4 shadow-xl active:scale-[0.98]">
+              Activate Monitoring
             </Button>
           </form>
         </DialogContent>
       </Dialog>
 
       <EmergencyDialog open={isEmergency} onOpenChange={setIsEmergency} escalationMessage={escalationMessage} />
-    </>
+    </div>
   );
 });
 Chat.displayName = 'Chat';

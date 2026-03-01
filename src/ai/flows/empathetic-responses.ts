@@ -1,55 +1,73 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for generating empathetic and supportive responses for new mothers.
- *
- * - `generateEmpatheticResponse` - A function that generates empathetic responses.
- * - `EmpatheticResponseInput` - The input type for the `generateEmpatheticResponse` function.
- * - `EmpatheticResponseOutput` - The output type for the `generateEmpatheticResponse` function.
+ * @fileOverview Core Chat Engine for Zera AI.
+ * This flow implements the "Health Monitoring based on Conversation" technique.
+ * It uses the master mainPrompt to analyze text for symptoms, urgency, and sentiment.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { withGroqFallback } from '../groq-fallback';
-import { empatheticResponseFallbackPrompt } from '@/ai/prompts/empathetic-response-fallback.prompt';
+import { mainPrompt } from '@/ai/prompts/main.prompt';
 
-const EmpatheticResponseInputSchema = z.object({
-  userInput: z.string().describe('The user input or message from the new mother.'),
-  context: z
-    .string()
-    .optional()
-    .describe('Additional context about the user or situation.'),
+const CoreChatInputSchema = z.object({
+  userInput: z.string().describe('The message from the user.'),
+  context: z.string().optional().describe('Serialized conversation history or health context.'),
+  language: z.string().default('English').describe('The response language.'),
 });
-export type EmpatheticResponseInput = z.infer<typeof EmpatheticResponseInputSchema>;
+export type CoreChatInput = z.infer<typeof CoreChatInputSchema>;
 
-const EmpatheticResponseOutputSchema = z.object({
-  response: z.string().describe('The empathetic and supportive response from the chatbot.'),
+const CoreChatOutputSchema = z.object({
+  route: z.object({
+    in_scope: z.boolean(),
+    topic: z.string(),
+    urgency: z.enum(['routine', 'monitor', 'appointment_24_48h', 'urgent_today', 'emergency_now']),
+    risk_score: z.number().min(0).max(10),
+    recommended_next_step: z.string(),
+    safety_signals: z.array(z.string()),
+    inferred_metrics: z.object({
+      stress_level: z.enum(['Stress', 'No Stress', 'unknown']),
+      physical_score: z.number().nullable(),
+      mental_score: z.number().nullable(),
+      urgency_flag: z.boolean(),
+    }),
+    next_question: z.string(),
+  }).describe('Internal routing and clinical metadata (Block A equivalent).'),
+  response: z.string().describe('The user-facing empathetic response (Block B equivalent).'),
 });
-export type EmpatheticResponseOutput = z.infer<typeof EmpatheticResponseOutputSchema>;
+export type CoreChatOutput = z.infer<typeof CoreChatOutputSchema>;
 
-export async function generateEmpatheticResponse(input: EmpatheticResponseInput): Promise<EmpatheticResponseOutput> {
-  return empatheticResponseFlow(input);
+export async function generateEmpatheticResponse(input: CoreChatInput): Promise<CoreChatOutput> {
+  return coreChatFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'empatheticResponsePrompt',
-  input: {schema: EmpatheticResponseInputSchema},
-  output: {schema: EmpatheticResponseOutputSchema},
-  prompt: empatheticResponseFallbackPrompt,
+  name: 'coreChatPrompt',
+  input: {schema: CoreChatInputSchema},
+  output: {schema: CoreChatOutputSchema},
+  prompt: `
+${mainPrompt}
+
+INSTRUCTION OVERRIDE: 
+Combine Block A and Block B into the specified JSON output schema.
+The "response" field must contain the empathetic Block B text.
+The "route" field must contain all metadata from Block A.
+`,
 });
 
 const promptWithFallback = withGroqFallback(
     prompt,
-    empatheticResponseFallbackPrompt,
-    EmpatheticResponseOutputSchema,
-    'empatheticResponseFlow'
+    mainPrompt, // Use the same prompt for fallback
+    CoreChatOutputSchema,
+    'coreChatFlow'
 );
 
-const empatheticResponseFlow = ai.defineFlow(
+const coreChatFlow = ai.defineFlow(
   {
-    name: 'empatheticResponseFlow',
-    inputSchema: EmpatheticResponseInputSchema,
-    outputSchema: EmpatheticResponseOutputSchema,
+    name: 'coreChatFlow',
+    inputSchema: CoreChatInputSchema,
+    outputSchema: CoreChatOutputSchema,
   },
   async input => {
     const { output } = await promptWithFallback(input);

@@ -5,7 +5,7 @@ import type { DailyCheckInInput } from '@/ai/flows/daily-check-in-questions';
 import { emergencyEscalation } from '@/ai/flows/emergency-escalation';
 import type { EmergencyEscalationInput } from '@/ai/flows/emergency-escalation';
 import { generateEmpatheticResponse } from '@/ai/flows/empathetic-responses';
-import type { EmpatheticResponseInput } from '@/ai/flows/empathetic-responses';
+import type { CoreChatInput } from '@/ai/flows/empathetic-responses';
 import { personalizedAdvice } from '@/ai/flows/personalized-advice';
 import type { PersonalizedAdviceInput } from '@/ai/flows/personalized-advice';
 import { understandSymptoms } from '@/ai/flows/symptom-understanding';
@@ -14,8 +14,6 @@ import { getEpdsAssessment } from '@/ai/flows/mental-health-screening';
 import type { EPDSScoringInput } from '@/ai/flows/mental-health-screening';
 import { getBreastfeedingSupport } from '@/ai/flows/breastfeeding-support';
 import type { BreastfeedingSupportInput } from '@/ai/flows/breastfeeding-support';
-import { getHealthTip } from '@/ai/flows/health-tips';
-import type { HealthTipInput } from '@/ai/flows/health-tips';
 import { generateSuggestions } from '@/ai/flows/generate-suggestions';
 import type { GenerateSuggestionsInput } from '@/ai/flows/generate-suggestions';
 
@@ -35,7 +33,7 @@ export async function getSymptomUnderstanding(input: UnderstandSymptomsInput) {
   return await understandSymptoms(input);
 }
 
-export async function getEmpatheticResponse(input: EmpatheticResponseInput) {
+export async function getEmpatheticResponse(input: CoreChatInput) {
   checkApiKeys();
   return await generateEmpatheticResponse(input);
 }
@@ -57,11 +55,6 @@ export async function getEPDSAssessment(input: EPDSScoringInput) {
 export async function getBreastfeedingSupportAction(input: BreastfeedingSupportInput) {
     checkApiKeys();
     return await getBreastfeedingSupport(input);
-}
-
-export async function getHealthTipAction(input: HealthTipInput) {
-    checkApiKeys();
-    return await getHealthTip(input);
 }
 
 export async function getSuggestions(input: GenerateSuggestionsInput) {
