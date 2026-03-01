@@ -1,15 +1,11 @@
 'use client';
 
 import {
-  getDailyCheckIn,
   getEmpatheticResponse,
   getEmergencyEscalation,
   getPersonalizedAdvice,
   getSymptomUnderstanding,
-  getEPDSAssessment,
-  getBreastfeedingSupportAction,
   getHealthTipAction,
-  getSuggestions,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -17,17 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
-  Baby,
-  ClipboardCheck,
   CornerDownLeft,
   Loader,
-  Sparkles,
-  Sun,
-  HeartPulse,
-  Bandage,
-  Utensils,
-  Dumbbell,
-  BrainCircuit,
   User,
   ShieldCheck,
   Zap,
@@ -39,18 +26,9 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useRouter } from 'next/navigation';
 import { EmergencyDialog } from './emergency-dialog';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { epdsQuestions, type EpdsQuestion } from '@/lib/epds-questions';
-import type { BreastfeedingSupportOutput } from '@/ai/flows/breastfeeding-support';
-import type { HealthTipOutput } from '@/ai/flows/health-tips';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from './ui/accordion';
-import type { PersonalizedAdviceOutput } from '@/ai/flows/personalized-advice';
 import {
   Dialog,
   DialogContent,
@@ -60,16 +38,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  PolarAngleAxis,
-  PolarGrid,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-} from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const STORAGE_KEY = 'zera_chat_history';
+const LATEST_RESULT_KEY = 'zera_latest_result';
 
 interface Message {
   id: string;
@@ -85,86 +56,6 @@ export interface ChatHandle {
   handleGetAdvice: () => void;
 }
 
-const AdviceChart = ({ scores }: { scores: PersonalizedAdviceOutput['scores'] }) => {
-  const data = [
-    { subject: 'Physical', A: scores.physical, fullMark: 10 },
-    { subject: 'Nutrition', A: scores.nutrition, fullMark: 10 },
-    { subject: 'Exercise', A: scores.exercise, fullMark: 10 },
-    { subject: 'Mental', A: scores.mental, fullMark: 10 },
-  ];
-
-  return (
-    <div className="h-[300px] w-full mt-4">
-      <ChartContainer config={{}}>
-        <ResponsiveContainer width="100%" height="100%">
-          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-            <PolarGrid stroke="hsla(191, 91%, 40%, 0.1)" />
-            <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--foreground))', fontSize: 12, fontWeight: 500 }} />
-            <Radar
-              name="Status"
-              dataKey="A"
-              stroke="hsl(var(--primary))"
-              fill="hsl(var(--primary))"
-              fillOpacity={0.2}
-            />
-            <ChartTooltip content={<ChartTooltipContent />} />
-          </RadarChart>
-        </ResponsiveContainer>
-      </ChartContainer>
-    </div>
-  );
-};
-
-const PersonalizedAdviceResult = ({ advice }: { advice: PersonalizedAdviceOutput }) => (
-  <div className="space-y-4">
-    <div className="flex items-center gap-2 mb-2">
-      <Sparkles className="text-primary h-5 w-5 animate-pulse" />
-      <h3 className="font-headline text-lg font-semibold text-foreground">Personalized Recovery Matrix</h3>
-    </div>
-    
-    <AdviceChart scores={advice.scores} />
-
-    <Accordion type="single" collapsible className="w-full bg-secondary/30 rounded-lg overflow-hidden border">
-      <AccordionItem value="item-1" className="border-b px-4">
-        <AccordionTrigger className="hover:no-underline py-4">
-          <div className="flex items-center gap-2">
-            <Bandage className="h-4 w-4 text-primary" />
-            Physical Recovery
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="text-muted-foreground pb-4">{advice.recoveryAdvice}</AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="item-2" className="border-b px-4">
-        <AccordionTrigger className="hover:no-underline py-4">
-          <div className="flex items-center gap-2">
-            <Utensils className="h-4 w-4 text-primary" />
-            Nutrition & Hydration
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="text-muted-foreground pb-4">{advice.nutritionAdvice}</AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="item-3" className="border-b px-4">
-        <AccordionTrigger className="hover:no-underline py-4">
-          <div className="flex items-center gap-2">
-            <Dumbbell className="h-4 w-4 text-primary" />
-            Exercise
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="text-muted-foreground pb-4">{advice.exerciseAdvice}</AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="item-4" className="border-none px-4">
-        <AccordionTrigger className="hover:no-underline py-4">
-          <div className="flex items-center gap-2">
-            <BrainCircuit className="h-4 w-4 text-primary" />
-            Mental Well-being
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="text-muted-foreground pb-4">{advice.mentalWellbeingAdvice}</AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  </div>
-);
-
 export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -173,6 +64,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   const [escalationMessage, setEscalationMessage] = useState('');
   const [showAdviceForm, setShowAdviceForm] = useState(false);
   const [adviceFormData, setAdviceFormData] = useState({ name: '', age: '', health: '' });
+  const router = useRouter();
 
   // Persistence
   useEffect(() => {
@@ -210,7 +102,6 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     }
   };
 
-  const [isScreening, setIsScreening] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([
     "I'm feeling really anxious and overwhelmed.",
     'What are the signs of a c-section infection?',
@@ -222,8 +113,12 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
 
   useImperativeHandle(ref, () => ({
     handleGetHealthTip,
-    handleStartScreening,
-    handleDailyCheckIn,
+    handleStartScreening: () => {
+       submitMessage("I'd like to start the mental health screening.");
+    },
+    handleDailyCheckIn: () => {
+       submitMessage("I'm ready for my daily check-in.");
+    },
     handleGetAdvice: () => setShowAdviceForm(true),
   }));
 
@@ -263,7 +158,6 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   const handleAdviceSubmit = async () => {
     setShowAdviceForm(false);
     setIsLoading(true);
-    setMessages(prev => [...prev, { id: Date.now() + '', role: 'system', content: `Generating matrix for ${adviceFormData.name}...` }]);
     
     try {
       const result = await getPersonalizedAdvice({
@@ -272,11 +166,18 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         healthData: adviceFormData.health,
         daysPostpartum: 14,
       });
-      setMessages(prev => [...prev, { 
-        id: Date.now() + 'advice', 
-        role: 'assistant', 
-        content: <PersonalizedAdviceResult advice={result} /> 
-      }]);
+      
+      // Save result locally for the dedicated page to read
+      localStorage.setItem(LATEST_RESULT_KEY, JSON.stringify({
+        ...result,
+        patientName: adviceFormData.name,
+        patientAge: adviceFormData.age,
+        generatedAt: new Date().toISOString()
+      }));
+      
+      // Redirect to the separate results page
+      router.push('/results');
+      
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Matrix Error', description: e.message });
     } finally {
@@ -291,9 +192,6 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
       setMessages(prev => [...prev, { id: Date.now() + '', role: 'assistant', content: tip.tip }]);
     } finally { setIsLoading(false); }
   }
-
-  function handleStartScreening() { /* Simplified */ }
-  function handleDailyCheckIn() { /* Simplified */ }
 
   return (
     <>
