@@ -1,10 +1,6 @@
 'use server';
 /**
- * @fileOverview This file contains the personalized advice flow, which provides tailored advice to new mothers on recovery progress, nutrition, exercise, and mental well-being.
- *
- * - personalizedAdvice - A function that takes input related to a mother's health and provides personalized advice.
- * - PersonalizedAdviceInput - The input type for the personalizedAdvice function.
- * - PersonalizedAdviceOutput - The return type for the personalizedAdvice function.
+ * @fileOverview This file contains the personalized advice flow.
  */
 
 import {ai} from '@/ai/genkit';
@@ -13,19 +9,24 @@ import {z} from 'genkit';
 import { withGroqFallback } from '../groq-fallback';
 
 const PersonalizedAdviceInputSchema = z.object({
-  healthData: z.string().describe('A summary of the mother’s current physical and mental health data, including symptoms, vital signs, and mood.'),
-  recoveryProgress: z.string().describe('Description of the mother’s recovery progress.'),
-  nutritionPreferences: z.string().optional().describe('The mother’s nutrition preferences, if available.'),
-  exerciseLevel: z.string().optional().describe('The mother’s current exercise level, if available.'),
-  mentalWellbeing: z.string().describe('Information about the mother’s mental and emotional wellbeing.'),
+  name: z.string().describe('User name'),
+  age: z.number().describe('User age'),
+  healthData: z.string().describe('Health details provided by user'),
+  daysPostpartum: z.number().describe('Days since delivery'),
 });
 export type PersonalizedAdviceInput = z.infer<typeof PersonalizedAdviceInputSchema>;
 
 const PersonalizedAdviceOutputSchema = z.object({
-  recoveryAdvice: z.string().describe('Advice related to physical recovery.'),
-  nutritionAdvice: z.string().describe('Advice related to nutrition and hydration.'),
-  exerciseAdvice: z.string().describe('Advice related to safe, gentle exercise.'),
-  mentalWellbeingAdvice: z.string().describe('Advice related to mental and emotional well-being.'),
+  recoveryAdvice: z.string(),
+  nutritionAdvice: z.string(),
+  exerciseAdvice: z.string(),
+  mentalWellbeingAdvice: z.string(),
+  scores: z.object({
+    physical: z.number().min(1).max(10).describe('Score 1-10 for physical recovery progress'),
+    nutrition: z.number().min(1).max(10).describe('Score 1-10 for nutrition/hydration status'),
+    exercise: z.number().min(1).max(10).describe('Score 1-10 for safe activity levels'),
+    mental: z.number().min(1).max(10).describe('Score 1-10 for emotional stability'),
+  }),
 });
 export type PersonalizedAdviceOutput = z.infer<typeof PersonalizedAdviceOutputSchema>;
 

@@ -19,16 +19,9 @@ import type { HealthTipInput } from '@/ai/flows/health-tips';
 import { generateSuggestions } from '@/ai/flows/generate-suggestions';
 import type { GenerateSuggestionsInput } from '@/ai/flows/generate-suggestions';
 
-/**
- * Checks if the required AI API keys are present in the environment.
- * Throws an error if any key is missing.
- */
 function checkApiKeys() {
     if (!process.env.GEMINI_API_KEY) {
-        throw new Error("Configuration error: GEMINI_API_KEY is not set in the server environment. Please add it to your .env file.");
-    }
-    if (!process.env.GROQ_API_KEY) {
-        throw new Error("Configuration error: GROQ_API_KEY is not set in the server environment. The fallback AI service will not work. Please add it to your .env file.");
+        throw new Error("Configuration error: GEMINI_API_KEY is not set.");
     }
 }
 
@@ -58,7 +51,6 @@ export async function getPersonalizedAdvice(input: PersonalizedAdviceInput) {
 }
 
 export async function getEPDSAssessment(input: EPDSScoringInput) {
-    // This action does not call an AI, so no API key check is needed.
     return await getEpdsAssessment(input);
 }
 
