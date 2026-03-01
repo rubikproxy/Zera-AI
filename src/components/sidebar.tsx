@@ -4,22 +4,26 @@ import {
   Activity,
   Home, 
   LifeBuoy, 
-  Sparkles, 
-  Sun, 
   PlusCircle,
+  Sun, 
   UserCircle,
   BarChart3
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 
 const CHAT_STORAGE_KEY = 'zera_chat_history_v2';
-const PROFILE_STORAGE_KEY = 'zera_user_profile';
 
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleNewChat = () => {
     if (confirm("Start a new session? This will clear current local dialogue but keep your profile.")) {
@@ -44,6 +48,10 @@ export function Sidebar() {
     { label: 'My Health Status', icon: BarChart3, href: '/chat/results' },
     { label: 'My Profile', icon: UserCircle, href: '/chat/profile' },
   ];
+
+  if (!mounted) return (
+    <div className="flex h-full flex-col gap-2 bg-muted/10 animate-pulse" />
+  );
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -95,7 +103,7 @@ export function Sidebar() {
             Local Node: Active
           </div>
           <div className="text-[9px] text-muted-foreground leading-relaxed">
-            All conversations and biometrics are stored locally on this device via IndexedDB/LocalStorage.
+            All conversations and biometrics are stored locally on this device via LocalStorage.
           </div>
         </div>
       </div>

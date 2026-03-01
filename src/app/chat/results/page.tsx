@@ -91,14 +91,15 @@ const RadarAnalysis = ({ scores }: { scores: HealthResult['scores'] }) => {
 
 export default function ResultsPage() {
   const [result, setResult] = useState<HealthResult | null>(null);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     const saved = localStorage.getItem(LATEST_RESULT_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Ensure structure exists to avoid runtime undefined errors
         if (parsed && parsed.metrics && parsed.scores) {
           setResult(parsed);
         }
@@ -108,7 +109,7 @@ export default function ResultsPage() {
     }
   }, []);
 
-  if (!result) {
+  if (!mounted || !result) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center space-y-4">
@@ -138,7 +139,6 @@ export default function ResultsPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
-        {/* Left Column: Predicted Clinical Metrics */}
         <div className="lg:col-span-4 space-y-6">
           <Card className="border-none glass shadow-xl">
             <CardHeader>
@@ -209,7 +209,6 @@ export default function ResultsPage() {
           </Card>
         </div>
 
-        {/* Right Column: Narrative & Status Analysis */}
         <div className="lg:col-span-8 space-y-8">
           <div className="flex flex-col gap-2">
             <h1 className="text-4xl font-headline font-bold text-foreground lg:text-6xl tracking-tight">
@@ -217,7 +216,7 @@ export default function ResultsPage() {
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl leading-relaxed">
               Real-time monitoring for <span className="text-foreground font-bold">{result.patientName}</span>. 
-              Our system utilizes Federated Learning principles to process your data privately.
+              Our system utilizes Local Data Residency principles to process your data privately.
             </p>
           </div>
 

@@ -37,7 +37,6 @@ interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  metadata?: any;
 }
 
 export interface ChatHandle {
@@ -51,19 +50,16 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   const [isEmergency, setIsEmergency] = useState(false);
   const [escalationMessage, setEscalationMessage] = useState('');
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
+  const [mounted, setMounted] = useState(false);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
-    // Check for profile first
+    setMounted(true);
     const profile = localStorage.getItem(PROFILE_KEY);
-    if (!profile) {
-      setHasProfile(false);
-    } else {
-      setHasProfile(true);
-    }
+    setHasProfile(!!profile);
 
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -96,7 +92,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     try {
       const resp = await getEmpatheticResponse({
         userInput: 'Introduce Zera, the futuristic AI postpartum health monitoring assistant.',
-        context: 'First interaction. Mention that monitoring is powered by Multimodal Deep Learning and Federated Learning principles.',
+        context: 'First interaction. Mention monitoring is powered by Multimodal Deep Learning and Local Data Residency.',
       });
       setMessages([{ id: 'init', role: 'assistant', content: resp.response }]);
     } catch (e) {
@@ -106,11 +102,11 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     }
   };
 
-  const [suggestions] = useState<string[]>([
+  const suggestions = [
     "I'm feeling very overwhelmed today.",
     "My recovery feels slightly slow.",
     "The baby is sleeping better now.",
-  ]);
+  ];
 
   useImperativeHandle(ref, () => ({
     handleDailyCheckIn: () => {
@@ -150,6 +146,8 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
       setIsLoading(false);
     }
   };
+
+  if (!mounted) return null;
 
   if (hasProfile === false) {
     return (
@@ -214,9 +212,9 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         <div className="p-6 border-t bg-white/50 backdrop-blur-md">
           <div className="flex flex-wrap gap-2 mb-6">
             {suggestions.map((s, i) => (
-              <Button key={i} variant="outline" size="sm" className="bg-white hover:bg-primary/5 text-[11px] border shadow-sm rounded-full px-4 h-8" onClick={() => submitMessage(s)}>
+              <button key={i} className="bg-white hover:bg-primary/5 text-[11px] border shadow-sm rounded-full px-4 h-8 transition-colors" onClick={() => submitMessage(s)}>
                 {s}
-              </Button>
+              </button>
             ))}
           </div>
           <form onSubmit={(e) => { e.preventDefault(); submitMessage(input); }} className="relative">
@@ -227,9 +225,9 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
               className="resize-none bg-white pr-16 focus:ring-primary/20 min-h-[60px] py-4 px-6 border shadow-inner rounded-3xl text-lg"
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(input); } }}
             />
-            <Button type="submit" size="icon" variant="ghost" className="absolute bottom-3 right-3 text-primary hover:bg-primary/10 h-10 w-10" disabled={isLoading || !input.trim()}>
+            <button type="submit" className="absolute bottom-3 right-3 text-primary hover:bg-primary/10 h-10 w-10 flex items-center justify-center rounded-full transition-colors" disabled={isLoading || !input.trim()}>
               <CornerDownLeft className="h-6 w-6" />
-            </Button>
+            </button>
           </form>
         </div>
       </div>

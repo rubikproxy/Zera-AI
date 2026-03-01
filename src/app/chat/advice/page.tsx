@@ -18,10 +18,12 @@ const PROFILE_KEY = 'zera_user_profile';
 export default function AdvicePage() {
   const [formData, setFormData] = useState({ name: '', age: '', health: '' });
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     // Pre-fill from local profile
     const savedProfile = localStorage.getItem(PROFILE_KEY);
     if (savedProfile) {
@@ -71,6 +73,8 @@ export default function AdvicePage() {
       setIsLoading(false);
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4">
@@ -129,7 +133,7 @@ export default function AdvicePage() {
                 />
                 <div className="absolute bottom-4 right-6 flex items-center gap-2 text-[9px] uppercase font-bold text-primary/40">
                   <Database className="h-3 w-3" />
-                  Auto-syncing to IndexedDB
+                  Auto-syncing to Local Database
                 </div>
               </div>
             </div>
