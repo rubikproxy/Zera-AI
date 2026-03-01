@@ -1,14 +1,15 @@
-
 'use client';
 
 import { 
   Home, 
-  LifeBuoy, 
+  Sparkles, 
+  MessageSquare,
   PlusCircle,
   CalendarCheck, 
   UserCircle,
   BarChart3,
-  Map
+  Map,
+  LogOut
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -33,71 +34,95 @@ export function Sidebar() {
     }
   };
 
-  const navItems = [
-    { label: 'Home', icon: Home, href: '/' },
-    { label: 'New Chat', icon: PlusCircle, onClick: handleNewChat },
-    { label: 'Daily Check-in', icon: CalendarCheck, href: '/chat/advice' },
-    { label: 'Recovery Journey', icon: Map, href: '/chat/timeline' },
-    { label: 'Health Status', icon: BarChart3, href: '/chat/results' },
-    { label: 'My Profile', icon: UserCircle, href: '/chat/profile' },
+  const menuGroups = [
+    {
+      label: "Main",
+      items: [
+        { label: '🏠 Home', icon: Home, href: '/' },
+        { label: '💬 AI Chat', icon: MessageSquare, href: '/chat' },
+        { label: '✨ New Chat', icon: PlusCircle, onClick: handleNewChat },
+      ]
+    },
+    {
+      label: "Monitoring",
+      items: [
+        { label: '📅 Daily Check-in', icon: CalendarCheck, href: '/chat/advice' },
+        { label: '🗺️ Recovery Journey', icon: Map, href: '/chat/timeline' },
+        { label: '📊 Health Status', icon: BarChart3, href: '/chat/results' },
+      ]
+    },
+    {
+      label: "Identity",
+      items: [
+        { label: '👤 My Profile', icon: UserCircle, href: '/chat/profile' },
+      ]
+    }
   ];
 
-  if (!mounted) return (
-    <div className="flex h-full flex-col gap-2 bg-muted/10 animate-pulse" />
-  );
+  if (!mounted) return <div className="h-full bg-white animate-pulse" />;
 
   return (
-    <div className="flex h-full flex-col gap-2 bg-white">
-      <div className="flex h-[60px] items-center border-b px-6">
-        <Link href="/chat" className="flex items-center gap-2 font-semibold">
-          <LifeBuoy className="h-6 w-6 text-primary" />
-          <span className="font-headline font-bold text-lg tracking-tight">AI Zera</span>
+    <div className="flex h-full flex-col bg-white border-r">
+      <div className="h-16 flex items-center px-6 border-b shrink-0">
+        <Link href="/chat" className="flex items-center gap-2">
+          <div className="bg-indigo-600 text-white p-1.5 rounded-lg">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <span className="font-headline font-extrabold text-xl tracking-tight">AI Zera</span>
         </Link>
       </div>
-      <div className="flex-1 overflow-y-auto py-4">
-        <nav className="grid items-start px-4 text-sm font-medium gap-1">
-          {navItems.map((item, idx) => {
-            const Icon = item.icon;
-            const isActive = item.href === pathname;
-            
-            if (item.href) {
-              return (
-                <Link
-                  key={idx}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-primary/5 hover:text-primary group",
-                    isActive ? "bg-primary/10 text-primary" : "text-muted-foreground"
-                  )}
-                >
-                  <Icon className={cn("h-4 w-4", isActive && "text-primary")} />
-                  <span className="font-bold">{item.label}</span>
-                </Link>
-              );
-            }
-            
-            return (
-              <button
-                key={idx}
-                onClick={item.onClick}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-primary/5 hover:text-primary text-left w-full group"
-              >
-                <Icon className="h-4 w-4" />
-                <span className="font-bold">{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+
+      <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8 custom-scrollbar">
+        {menuGroups.map((group, groupIdx) => (
+          <div key={groupIdx} className="space-y-2">
+            <h4 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{group.label}</h4>
+            <nav className="space-y-1">
+              {group.items.map((item, idx) => {
+                const isActive = item.href === pathname;
+                
+                if (item.href) {
+                  return (
+                    <Link
+                      key={idx}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all group",
+                        isActive 
+                          ? "bg-indigo-50 text-indigo-700 shadow-sm" 
+                          : "text-muted-foreground hover:bg-gray-50 hover:text-gray-900"
+                      )}
+                    >
+                      <item.icon className={cn("h-4 w-4", isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600")} />
+                      {item.label}
+                    </Link>
+                  );
+                }
+                
+                return (
+                  <button
+                    key={idx}
+                    onClick={item.onClick}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-muted-foreground transition-all hover:bg-gray-50 hover:text-gray-900 w-full text-left"
+                  >
+                    <item.icon className="h-4 w-4 text-gray-400" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
       </div>
-      <div className="p-6 border-t bg-secondary/10">
-        <div className="space-y-4">
-           <div className="flex items-center gap-2 text-[9px] uppercase font-bold tracking-widest text-primary/60">
-             Monitoring Node Active
-           </div>
-           <div className="p-3 bg-white rounded-xl border border-primary/10 shadow-sm flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-green-500" />
-              <span className="text-[10px] font-bold">System Online</span>
-           </div>
+
+      <div className="p-4 border-t bg-gray-50/50">
+        <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+             <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Local Node Active</span>
+          </div>
+          <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
+            Your biometrics and chats are stored strictly on this device.
+          </p>
         </div>
       </div>
     </div>
