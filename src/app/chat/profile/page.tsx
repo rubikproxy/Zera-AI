@@ -38,12 +38,12 @@ export default function ProfilePage() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile.name || !profile.birthMethod || !profile.daysSinceBirth) {
-      toast({ variant: 'destructive', title: 'Validation Error', description: 'Please fill in core details.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Please fill in core details.' });
       return;
     }
 
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-    toast({ title: 'Profile Secured', description: 'Your health context has been updated locally.' });
+    toast({ title: 'Profile Updated' });
     router.push('/chat');
   };
 
@@ -51,130 +51,92 @@ export default function ProfilePage() {
     <div className="max-w-4xl mx-auto py-12 px-4">
       <div className="flex flex-col gap-2 mb-10 text-center">
         <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">Health <span className="text-primary italic">Identity Node</span></h1>
-        <p className="text-muted-foreground text-lg">Manage your local identity profile and clinical context.</p>
+        <p className="text-muted-foreground text-lg">Manage your identity profile and clinical context.</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <Card className="border-none glass shadow-2xl rounded-[40px] overflow-hidden">
-            <CardHeader className="pb-2 pt-8 px-8">
-               <CardTitle className="text-2xl font-headline flex items-center gap-2">
-                 <UserCircle className="h-6 w-6 text-primary" />
-                 Personal Context
-               </CardTitle>
-               <CardDescription>All information is stored privately on your device.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-8">
-              <form onSubmit={handleSave} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Name</Label>
-                    <Input 
-                      id="name" 
-                      value={profile.name} 
-                      onChange={e => setProfile(p => ({...p, name: e.target.value}))}
-                      placeholder="E.g., Elena"
-                      className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dob" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Date of Birth</Label>
-                    <Input 
-                      id="dob" 
-                      type="date"
-                      value={profile.dob} 
-                      onChange={e => setProfile(p => ({...p, dob: e.target.value}))}
-                      className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Phone Number</Label>
-                    <Input 
-                      id="phone" 
-                      value={profile.phone} 
-                      onChange={e => setProfile(p => ({...p, phone: e.target.value}))}
-                      placeholder="+1 (555) 000-0000"
-                      className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email"
-                      value={profile.email} 
-                      onChange={e => setProfile(p => ({...p, email: e.target.value}))}
-                      placeholder="elena@example.com"
-                      className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">How did you give birth?</Label>
-                    <Select 
-                      value={profile.birthMethod} 
-                      onValueChange={v => setProfile(p => ({...p, birthMethod: v}))}
-                    >
-                      <SelectTrigger className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="vaginal">Natural/Vaginal</SelectItem>
-                        <SelectItem value="c-section">C-Section</SelectItem>
-                        <SelectItem value="assisted">Assisted (Forceps/Vacuum)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="days" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Days since baby was born</Label>
-                    <Input 
-                      id="days" 
-                      type="number"
-                      value={profile.daysSinceBirth} 
-                      onChange={e => setProfile(p => ({...p, daysSinceBirth: e.target.value}))}
-                      placeholder="14"
-                      className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
-                    />
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full h-14 rounded-full font-bold text-lg gap-3 shadow-xl hover:scale-[1.02] transition-transform">
-                  <Save className="h-5 w-5" />
-                  Update Local Store
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card className="border-none glass shadow-xl rounded-[30px] bg-primary/5">
-            <CardHeader>
-              <CardTitle className="text-lg font-headline flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-primary" />
-                Privacy Protocol
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground leading-relaxed space-y-4">
-              <p>Zera AI operates on a <strong>Federated Learning Architecture</strong>. Your personal data never leaves this browser instance.</p>
-              <div className="flex items-center gap-3 p-3 bg-white/50 rounded-xl border border-primary/10">
-                <Database className="h-4 w-4 text-primary" />
-                <span className="font-bold uppercase tracking-tighter">Secure Persistence Active</span>
+      <Card className="border-none glass shadow-2xl rounded-[40px] overflow-hidden">
+        <CardHeader className="pb-2 pt-8 px-8">
+            <CardTitle className="text-2xl font-headline flex items-center gap-2">
+              <UserCircle className="h-6 w-6 text-primary" />
+              Personal Context
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="p-8">
+          <form onSubmit={handleSave} className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Name</Label>
+                <Input 
+                  value={profile.name} 
+                  onChange={e => setProfile(p => ({...p, name: e.target.value}))}
+                  className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                />
               </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Date of Birth</Label>
+                <Input 
+                  type="date"
+                  value={profile.dob} 
+                  onChange={e => setProfile(p => ({...p, dob: e.target.value}))}
+                  className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                />
+              </div>
+            </div>
 
-          <Button variant="ghost" onClick={() => router.push('/chat')} className="w-full justify-between h-14 rounded-2xl group border border-dashed border-primary/20">
-            <span>Back to Chat</span>
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        </div>
-      </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Phone Number</Label>
+                <Input 
+                  value={profile.phone} 
+                  onChange={e => setProfile(p => ({...p, phone: e.target.value}))}
+                  className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Email</Label>
+                <Input 
+                  type="email"
+                  value={profile.email} 
+                  onChange={e => setProfile(p => ({...p, email: e.target.value}))}
+                  className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">How did you give birth?</Label>
+                <Select 
+                  value={profile.birthMethod} 
+                  onValueChange={v => setProfile(p => ({...p, birthMethod: v}))}
+                >
+                  <SelectTrigger className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vaginal">Natural</SelectItem>
+                    <SelectItem value="c-section">C-Section</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Days since baby was born</Label>
+                <Input 
+                  type="number"
+                  value={profile.daysSinceBirth} 
+                  onChange={e => setProfile(p => ({...p, daysSinceBirth: e.target.value}))}
+                  className="h-12 rounded-xl bg-secondary/30 border-none shadow-inner"
+                />
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full h-14 rounded-full font-bold text-lg gap-3 shadow-xl">
+              <Save className="h-5 w-5" />
+              Update Identity
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

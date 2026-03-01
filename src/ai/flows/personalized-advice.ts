@@ -22,11 +22,12 @@ const PersonalizedAdviceOutputSchema = z.object({
   exerciseAdvice: z.string(),
   mentalWellbeingAdvice: z.string(),
   metrics: z.object({
-    heartRate: z.number().describe('Estimated resting heart rate based on reported symptoms/activity'),
-    bloodPressure: z.string().describe('Estimated/Contextual blood pressure category (e.g., "118/78 mmHg")'),
-    sleepHours: z.number().describe('Estimated daily sleep hours'),
+    heartRate: z.number().describe('Estimated/Predicted resting heart rate'),
+    bloodPressure: z.string().describe('Estimated/Predicted blood pressure'),
+    sleepHours: z.number().describe('Estimated/Predicted daily sleep'),
+    steps: z.number().describe('Predicted/Target step count'),
     stressLevel: z.enum(['Stress', 'No Stress']).describe('Predicted stress level'),
-    nutritionStatus: z.string().describe('Brief status of nutrition (e.g., "Optimal", "Needs Hydration")'),
+    nutritionStatus: z.string().describe('Brief status of nutrition'),
   }),
   scores: z.object({
     physical: z.number().min(1).max(10),

@@ -10,15 +10,16 @@ Days Postpartum: {{{daysPostpartum}}}
 
 TASK:
 1. Predict/Estimate Clinical Metrics:
-   - heartRate: Estimate a likely resting heart rate (60-100) based on their reported activity/stress.
-   - bloodPressure: Estimate a likely BP (e.g., "120/80") based on context.
-   - sleepHours: Estimate daily sleep based on reported fatigue/baby behavior.
+   - heartRate: Predict a likely heart rate (60-100) based on their reported activity/stress.
+   - bloodPressure: Predict a likely BP (e.g., "118/78") based on context.
+   - sleepHours: Predict daily sleep based on input.
+   - steps: Predict current daily steps or set a safe recovery target steps.
    - stressLevel: Determine "Stress" or "No Stress" based on emotional cues.
    - nutritionStatus: Evaluate their hydration and fueling.
 
 2. Generate Targeted Advice:
    - recoveryAdvice: Physical healing steps.
-   - nutritionAdvice: Step-by-step nutrition plan.
+   - nutritionAdvice: Nutrition guidance.
    - exerciseAdvice: Safe movement.
    - mentalWellbeingAdvice: Emotional regulation.
 

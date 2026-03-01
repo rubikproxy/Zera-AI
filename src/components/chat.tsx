@@ -18,7 +18,9 @@ import {
   Zap,
   UserCircle,
   Save,
-  Lock
+  Lock,
+  Mic,
+  Smile
 } from 'lucide-react';
 import {
   forwardRef,
@@ -112,7 +114,6 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     }
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profileForm));
     setShowProfileDialog(false);
-    toast({ title: 'Profile Created', description: 'Your health identity is now stored locally.' });
     getInitialGreeting();
   };
 
@@ -120,26 +121,26 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     setIsLoading(true);
     try {
       const resp = await getEmpatheticResponse({
-        userInput: 'Introduce Zera, the futuristic AI postpartum health monitoring assistant.',
-        context: 'First interaction. Mention monitoring is powered by Multimodal Deep Learning and Local Data Residency.',
+        userInput: 'Introduce Zera, the futuristic AI postpartum health assistant.',
+        context: 'First interaction.',
       });
       setMessages([{ id: 'init', role: 'assistant', content: resp.response }]);
     } catch (e) {
-      setMessages([{ id: 'err', role: 'assistant', content: 'I am Zera, your monitoring assistant. I analyze our conversations to synthesize your recovery status locally.' }]);
+      setMessages([{ id: 'err', role: 'assistant', content: 'I am Zera, your postpartum monitoring assistant.' }]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const suggestions = [
-    "I'm feeling very overwhelmed today.",
-    "My recovery feels slightly slow.",
-    "The baby is sleeping better now.",
+    "How should I manage recovery today?",
+    "I'm feeling a bit tired.",
+    "Is my bleeding normal?",
   ];
 
   useImperativeHandle(ref, () => ({
     handleDailyCheckIn: () => {
-       submitMessage("I'm ready for my daily check-in monitoring.");
+       router.push('/chat/advice');
     },
   }));
 
@@ -156,7 +157,9 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     if (!text.trim() || isLoading) return;
     setIsLoading(true);
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text };
-    setMessages(prev => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedMessages));
     setInput('');
 
     try {
@@ -166,11 +169,14 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         setEscalationMessage(esc.escalationMessage);
         setIsEmergency(true);
       } else {
-        const resp = await getEmpatheticResponse({ userInput: text, context: 'Advanced Local Monitoring Mode active.' });
-        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: resp.response }]);
+        const resp = await getEmpatheticResponse({ userInput: text, context: 'Monitoring Active.' });
+        const assistantMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: resp.response };
+        const finalMessages = [...updatedMessages, assistantMsg];
+        setMessages(finalMessages);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(finalMessages));
       }
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Monitoring Error', description: e.message || 'Failed to process physiological signal.' });
+      toast({ variant: 'destructive', title: 'Error', description: e.message || 'Failed to process signal.' });
     } finally {
       setIsLoading(false);
     }
@@ -180,29 +186,18 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
 
   return (
     <>
-      <div className="flex h-full flex-col w-full bg-background border rounded-[30px] shadow-2xl overflow-hidden glass">
-        <div className="px-6 py-4 border-b bg-secondary/20 flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-3 w-3 text-primary" />
-            Federated Local Persistence
-          </div>
-          <div className="flex items-center gap-2">
-            <Zap className="h-3 w-3 text-primary" />
-            Gemini Multimodal Synthesis
-          </div>
-        </div>
-
+      <div className="flex h-full flex-col w-full bg-background border rounded-[30px] shadow-xl overflow-hidden glass">
         <ScrollArea className="flex-1" ref={scrollAreaRef}>
-          <div className="p-8 space-y-8">
+          <div className="p-6 lg:p-10 space-y-8">
             {messages.map((m) => (
               <div key={m.id} className={cn('flex items-start gap-4', m.role === 'user' && 'flex-row-reverse')}>
-                <Avatar className="border-2 h-10 w-10 bg-background shadow-sm shrink-0">
-                  <AvatarFallback className="bg-transparent text-primary font-bold">
-                    {m.role === 'assistant' ? 'Z' : <User className="h-5 w-5" />}
+                <Avatar className="h-9 w-9 bg-background shadow-sm shrink-0 border">
+                  <AvatarFallback className="bg-transparent text-primary font-bold text-xs uppercase">
+                    {m.role === 'assistant' ? 'Z' : <User className="h-4 w-4" />}
                   </AvatarFallback>
                 </Avatar>
                 <div className={cn(
-                  'max-w-[80%] rounded-3xl p-5 text-base shadow-sm leading-relaxed',
+                  'max-w-[85%] rounded-[24px] p-5 text-sm shadow-sm leading-relaxed',
                   m.role === 'user' 
                     ? 'bg-primary text-primary-foreground font-medium rounded-tr-none' 
                     : 'bg-white border text-foreground whitespace-pre-wrap rounded-tl-none'
@@ -213,133 +208,98 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
             ))}
             {isLoading && (
               <div className="flex items-start gap-4">
-                <Avatar className="border bg-background h-10 w-10 shrink-0"><AvatarFallback>Z</AvatarFallback></Avatar>
-                <div className="bg-white border p-5 rounded-3xl shadow-sm rounded-tl-none"><Loader className="h-4 w-4 animate-spin text-primary" /></div>
+                <Avatar className="border h-9 w-9 shrink-0"><AvatarFallback>Z</AvatarFallback></Avatar>
+                <div className="bg-white border p-4 rounded-[24px] shadow-sm rounded-tl-none"><Loader className="h-4 w-4 animate-spin text-primary" /></div>
               </div>
             )}
           </div>
         </ScrollArea>
 
-        <div className="p-6 border-t bg-white/50 backdrop-blur-md">
-          <div className="flex flex-wrap gap-2 mb-6">
+        <div className="p-6 border-t bg-white/40">
+          <div className="flex flex-wrap gap-2 mb-4">
             {suggestions.map((s, i) => (
-              <button key={i} className="bg-white hover:bg-primary/5 text-[11px] border shadow-sm rounded-full px-4 h-8 transition-colors" onClick={() => submitMessage(s)}>
+              <button key={i} className="bg-white hover:bg-primary/5 text-[10px] font-bold border rounded-full px-4 h-8 transition-colors uppercase tracking-tight" onClick={() => submitMessage(s)}>
                 {s}
               </button>
             ))}
           </div>
-          <form onSubmit={(e) => { e.preventDefault(); submitMessage(input); }} className="relative">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Record check-in details or current status..."
-              className="resize-none bg-white pr-16 focus:ring-primary/20 min-h-[60px] py-4 px-6 border shadow-inner rounded-3xl text-lg"
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(input); } }}
-            />
-            <button type="submit" className="absolute bottom-3 right-3 text-primary hover:bg-primary/10 h-10 w-10 flex items-center justify-center rounded-full transition-colors" disabled={isLoading || !input.trim()}>
-              <CornerDownLeft className="h-6 w-6" />
-            </button>
+          <form onSubmit={(e) => { e.preventDefault(); submitMessage(input); }} className="relative flex items-center gap-2">
+            <div className="flex-1 relative">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Talk to Zera..."
+                className="resize-none bg-white pr-12 focus:ring-primary/20 min-h-[50px] max-h-[150px] py-3 px-5 border shadow-inner rounded-[24px] text-sm"
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(input); } }}
+              />
+              <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-primary hover:bg-primary/10 h-8 w-8 flex items-center justify-center rounded-full transition-colors" disabled={isLoading || !input.trim()}>
+                <CornerDownLeft className="h-5 w-5" />
+              </button>
+            </div>
           </form>
         </div>
       </div>
 
-      {/* Simplified Identity Dialog */}
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
         <DialogContent className="max-w-md rounded-[32px] border-none shadow-2xl glass p-0 overflow-hidden">
-          <div className="bg-primary/10 p-8 flex flex-col items-center text-center">
+          <div className="bg-primary/5 p-8 flex flex-col items-center text-center">
              <div className="bg-white p-4 rounded-2xl shadow-sm mb-4">
-                <UserCircle className="h-10 w-10 text-primary" />
+                <UserCircle className="h-8 w-8 text-primary" />
              </div>
-             <DialogTitle className="text-2xl font-headline font-bold">Welcome to Zera</DialogTitle>
+             <DialogTitle className="text-2xl font-headline font-bold">Health Identity Setup</DialogTitle>
              <DialogDescription className="text-muted-foreground mt-2">
-               Let's set up your private health profile. Everything is stored only on your laptop.
+               Welcome. Please initialize your health profile to begin monitoring.
              </DialogDescription>
           </div>
           <form onSubmit={handleSaveProfile} className="p-8 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Your Name</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Name</Label>
               <Input 
-                id="name" 
                 placeholder="E.g., Elena" 
                 value={profileForm.name} 
                 onChange={e => setProfileForm(p => ({...p, name: e.target.value}))}
-                className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner"
+                className="h-10 rounded-xl bg-secondary/20 border-none shadow-inner"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dob" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Birthday</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Birthday</Label>
                 <Input 
-                  id="dob" 
                   type="date"
                   value={profileForm.dob} 
                   onChange={e => setProfileForm(p => ({...p, dob: e.target.value}))}
-                  className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner"
+                  className="h-10 rounded-xl bg-secondary/20 border-none shadow-inner"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Phone Number</Label>
-                <Input 
-                  id="phone" 
-                  placeholder="Optional"
-                  value={profileForm.phone} 
-                  onChange={e => setProfileForm(p => ({...p, phone: e.target.value}))}
-                  className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner"
-                />
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">How you gave birth?</Label>
+                <Select value={profileForm.birthMethod} onValueChange={v => setProfileForm(p => ({...p, birthMethod: v}))}>
+                  <SelectTrigger className="h-10 rounded-xl bg-secondary/20 border-none shadow-inner">
+                    <SelectValue placeholder="Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vaginal">Normal</SelectItem>
+                    <SelectItem value="c-section">C-Section</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Email Address</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Days since baby was born?</Label>
               <Input 
-                id="email" 
-                type="email"
-                placeholder="Optional"
-                value={profileForm.email} 
-                onChange={e => setProfileForm(p => ({...p, email: e.target.value}))}
-                className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">How did you give birth?</Label>
-              <Select 
-                value={profileForm.birthMethod} 
-                onValueChange={v => setProfileForm(p => ({...p, birthMethod: v}))}
-              >
-                <SelectTrigger className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner">
-                  <SelectValue placeholder="Select one" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vaginal">Natural/Vaginal</SelectItem>
-                  <SelectItem value="c-section">C-Section</SelectItem>
-                  <SelectItem value="assisted">Assisted (Forceps/Vacuum)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="days" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Days since your baby was born?</Label>
-              <Input 
-                id="days" 
                 type="number"
                 placeholder="E.g., 14"
                 value={profileForm.daysSinceBirth} 
                 onChange={e => setProfileForm(p => ({...p, daysSinceBirth: e.target.value}))}
-                className="h-11 rounded-xl bg-secondary/30 border-none shadow-inner"
+                className="h-10 rounded-xl bg-secondary/20 border-none shadow-inner"
               />
             </div>
 
-            <Button type="submit" className="w-full h-12 rounded-full font-bold mt-6 shadow-xl gap-2">
-              <Save className="h-4 w-4" />
-              Create Local Profile
+            <Button type="submit" className="w-full h-11 rounded-full font-bold mt-4 shadow-lg">
+              Start Monitoring
             </Button>
-
-            <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest mt-4">
-              <Lock className="h-3 w-3" />
-              100% On-Device Privacy
-            </div>
           </form>
         </DialogContent>
       </Dialog>
