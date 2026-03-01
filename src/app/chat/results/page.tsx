@@ -183,6 +183,8 @@ export default function ResultsPage() {
     return order[a.severity] - order[b.severity];
   }) || [];
 
+  const isStress = result.metrics?.stressLevel === 'Stress';
+
   return (
     <div className="max-w-7xl mx-auto pb-24 px-4">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-6">
@@ -245,9 +247,12 @@ export default function ResultsPage() {
         </div>
 
         <div className="lg:col-span-4 space-y-8">
-          <Card className="border-none glass shadow-xl rounded-[48px] text-center p-12 transition-all hover:-translate-y-1">
-               <div className="text-8xl mb-8 drop-shadow-sm">{result.metrics?.stressLevel === 'Stress' ? '🌪️' : '✨'}</div>
-               <h2 className="text-4xl font-black text-black uppercase tracking-tight mb-4">{result.metrics?.stressLevel || 'Unknown'}</h2>
+          <Card className={cn(
+            "border-none shadow-xl rounded-[48px] text-center p-12 transition-all hover:-translate-y-1",
+            isStress ? "bg-red-500" : "bg-green-500"
+          )}>
+               <div className="text-8xl mb-8 drop-shadow-sm">{isStress ? '🌪️' : '😊'}</div>
+               <h2 className="text-4xl font-black text-black uppercase tracking-tight mb-4">{isStress ? 'STRESS' : 'NO STRESS'}</h2>
                <Badge className="px-6 py-2 uppercase text-[10px] font-black bg-black text-white rounded-full border-none">Inferred Stress</Badge>
           </Card>
 
