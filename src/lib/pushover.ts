@@ -1,5 +1,5 @@
 /**
- * @fileOverview Utility to send push notifications via Pushover.
+ * @fileOverview Utility to send push notifications via Pushover for emergency escalation.
  */
 
 export async function sendPushoverNotification(message: string, title: string = '🚨 ZERA EMERGENCY ALERT') {
@@ -7,9 +7,16 @@ export async function sendPushoverNotification(message: string, title: string = 
   const user = process.env.PUSHOVER_USER_KEY;
 
   if (!token || !user) {
-    console.warn('Pushover credentials (PUSHOVER_TOKEN or PUSHOVER_USER_KEY) not set in .env. Skipping notification.');
+    console.log('\n---------------------------------------------------------');
+    console.log('🔥 SIMULATED EMERGENCY NOTIFICATION 🔥');
+    console.log(`TITLE: ${title}`);
+    console.log(`MESSAGE: ${message}`);
+    console.log('STATUS: Skipped (Pushover keys not set in .env)');
+    console.log('---------------------------------------------------------\n');
     return;
   }
+
+  console.log(`[Pushover] Attempting to send emergency notification: "${title}"`);
 
   try {
     const response = await fetch('https://api.pushover.net/1/messages.json', {
@@ -31,11 +38,11 @@ export async function sendPushoverNotification(message: string, title: string = 
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Pushover API error:', errorText);
+      console.error('[Pushover] API error:', errorText);
     } else {
-      console.log('Pushover emergency notification sent successfully.');
+      console.log('[Pushover] Emergency notification sent successfully to external devices.');
     }
   } catch (error) {
-    console.error('Failed to send Pushover notification:', error);
+    console.error('[Pushover] Failed to dispatch notification:', error);
   }
 }

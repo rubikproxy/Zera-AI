@@ -72,11 +72,15 @@ const coreChatFlow = ai.defineFlow(
   async input => {
     const { output } = await promptWithFallback(input);
     
-    // Trigger Pushover notification for emergencies
+    // Trigger External Emergency Escalation via Pushover
     if (output?.route?.urgency === 'emergency_now') {
+      console.log(`[Flow] Emergency detected in chat! Topic: ${output.route.topic}. Triggering Pushover...`);
+      // We don't block the UI response on the notification delivery, but we ensure it's called.
       await sendPushoverNotification(
-        `Critical postpartum emergency detected: ${output.route.topic}. Response: ${output.response.substring(0, 100)}...`,
-        '🚨 ZERA: EMERGENCY DETECTED'
+        `CRITICAL ALERT: ${output.route.topic.toUpperCase()}. 
+Symptoms/Context: ${input.userInput}
+Zera Response: ${output.response.substring(0, 150)}...`,
+        '🚨 ZERA: CRITICAL EMERGENCY'
       );
     }
     
