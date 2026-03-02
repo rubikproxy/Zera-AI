@@ -7,39 +7,32 @@ AI Zera is a high-tech "Digital Twin" monitoring system for postpartum maternal 
 
 ### 1. Identity Node (Personalized Profile)
 - **Local Enrollment**: Users initialize their health identity locally before starting the monitoring journey.
-- **Friendly UX**: Simple, supportive language used for onboarding (e.g., "Naturally" vs "C-Section").
-- **Local Persistence**: All identifiers (Name, DOB, Phone, Email, Birth Method) are stored exclusively in the user's browser.
+- **Simplified Language**: Uses friendly terms like "Naturally" and "How many days since baby was born?" for onboarding.
+- **Local Persistence**: All identifiers are stored exclusively in the user's browser, ensuring total privacy.
 
-### 2. Recovery Journey (Milestone Timeline)
-- **12-Week Roadmap**: A dynamic, week-based timeline that tracks the user's progress from delivery through the fourth trimester.
-- **Stage-Aware Highlight**: Automatically identifies the user's current week based on delivery date.
-- **Clinical Triage**: Provides specific "Normal" signs, "Red Flags," and "Tiny Goals" for each recovery phase.
+### 2. Neural Safety Layer (Emergency Escalation)
+- **Real-Time Triage**: AI analyzes chat messages and check-in vitals for high-risk clinical triggers.
+- **Hemorrhage/Preeclampsia detection**: Specific detection protocols for heavy bleeding, BP ≥160/110, or sepsis signals.
+- **Crisis Dialog**: A non-dismissible, high-contrast emergency portal that demands immediate action when danger is detected.
 
-### 3. Red-flag “Event Detector” (Trend Monitoring)
-- **Longitudinal Analysis**: AI processes the last 7 days of health signals to detect concerning patterns.
-- **Rising BP Detection**: Monitors for consecutive increases in blood pressure.
-- **Exhaustion Spirals**: Detects combined drops in sleep and mood (sad/stressed).
-- **Recovery Regression**: Monitors for activity drops paired with reported pain increases.
-- **Pattern-Based Alerts**: High-severity trend alerts are displayed prominently with immediate clinical action steps.
+### 3. Recovery Journey (Milestone Timeline)
+- **12-Week Roadmap**: A dynamic, week-based timeline that tracks healing from Week 1 to Week 12.
+- **Stage-Aware Highlight**: Automatically identifies the user's current week and provides stage-specific "Normal" and "Red Flag" advice.
+- **Tiny Goals**: Actionable recovery steps like "5-min walk" or "hydration target."
 
-### 4. Conversational Health Monitoring
-- **Zera AI Persona**: A specialized assistant for the first 6–12 weeks postpartum.
-- **Inferred Metrics**: Predicts heart rate, BP, sleep, and steps based on natural language check-ins.
-- **Stress Monitoring**: Real-time sentiment analysis classifies states as "Stress" or "No Stress."
+### 4. Red-flag “Event Detector” (Trend Monitoring)
+- **Longitudinal Analysis**: Processes the last 7 days of signals to detect patterns like rising BP trends or sleep/mood crashes.
+- **Pattern-Based Alerts**: High-severity trend alerts are displayed on the dashboard with immediate action steps.
 
-### 5. Smart Daily Check-in Portal
-- **Date-Aware Sync**: Intelligent form that allows "Modify Today" updates while forcing a "Fresh Start" every morning at midnight.
-- **Metric Tracking**: Simple, accessible questions for logging sleep, activity, and vitals.
+### 5. Health Status Dashboard (Monitoring Cockpit)
+- **High-Contrast Typography**: Bold Black headings with micro-emoji status indicators for a professional clinical feel.
+- **Stress Status Card**: A dynamic visual engine that turns Red for "Stress" and Green for "No Stress."
+- **Radar Recovery Index**: Visualizes physical, mental, nutrition, and exercise scores in an interactive chart.
 
-### 6. Health Status Dashboard (Monitoring Cockpit)
-- **Innovative Data Visualization**: Radar Chart visualizing recovery scores across Physical, Nutrition, Exercise, and Mental domains.
-- **7-Day Trend Tracker**: Longitudinal line chart visualizing recovery progress over the past week.
-- **Interactive Metric Cards**: High-tech status blocks for vitals with pattern-detected badges.
-
-### 7. Professional "2070" UI/UX
-- **Fixed Sidebar Navigation**: Stable, non-scrolling navigation ensuring constant access to all monitoring tools.
-- **Glassmorphism Aesthetic**: Modern clinical design with translucent panels and high-contrast cyan accents.
-- **Privacy by Design**: No central server storage; all health logs and chat histories remain on the user's device.
+### 6. Professional "2070" SaaS UI
+- **Glassmorphism Aesthetic**: Indigo accents, blurred panels, and spacious layouts.
+- **Fixed Sidebar**: Constant access to Dashboard, Check-in, Journey, and Identity.
+- **Mobile First**: Fully responsive layouts that collapse for easy access on-the-go.
 
 ---
 *Zera AI is a Research Prototype developed to explore Multimodal Deep Learning and Federated Learning principles in healthcare.*
