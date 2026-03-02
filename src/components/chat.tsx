@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CornerDownLeft, User, Sparkles, ShieldAlert, Loader2 } from 'lucide-react';
+import { SendHorizonal, User, Sparkles, ShieldAlert, Loader2 } from 'lucide-react';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { EmergencyDialog } from './emergency-dialog';
@@ -123,7 +123,7 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
     setInput('');
 
     try {
-      const contextString = history.slice(-5).map(m => `${m.role}: ${m.content}`).join('\n');
+      const contextString = history.slice(-10).map(m => `${m.role}: ${m.content}`).join('\n');
       const result = await getEmpatheticResponse({ 
         userInput: text, 
         context: contextString,
@@ -157,43 +157,46 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
   if (!mounted) return null;
 
   return (
-    <div className="flex h-full flex-col w-full bg-white/40 backdrop-blur-xl border border-gray-200 shadow-2xl rounded-[2.5rem] overflow-hidden">
-      <ScrollArea className="flex-1" ref={scrollAreaRef}>
-        <div className="p-8 lg:p-12 space-y-12">
+    <div className="flex h-full flex-col w-full bg-[#FAFAF8] relative">
+      {/* Messages Viewport */}
+      <ScrollArea className="flex-1 w-full" ref={scrollAreaRef}>
+        <div className="max-w-4xl mx-auto px-6 py-12 space-y-8">
           {messages.map((m) => (
-            <div key={m.id} className={cn('flex items-start gap-6', m.role === 'user' && 'flex-row-reverse')}>
-              <Avatar className={cn(
-                "h-12 w-12 shadow-sm border shrink-0",
-                m.role === 'assistant' ? "bg-indigo-600 text-white" : "bg-white text-indigo-600"
-              )}>
-                <AvatarFallback className="text-xs font-bold uppercase">
-                  {m.role === 'assistant' ? <Sparkles className="h-5 w-5" /> : <User className="h-5 w-5" />}
-                </AvatarFallback>
-              </Avatar>
+            <div key={m.id} className={cn('flex items-start gap-4 mb-8', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+              {m.role === 'assistant' && (
+                <Avatar className="h-9 w-9 border bg-indigo-600 text-white shadow-sm shrink-0">
+                  <AvatarFallback><Sparkles className="h-4 w-4" /></AvatarFallback>
+                </Avatar>
+              )}
               <div className={cn(
-                'max-w-[75%] relative rounded-[2rem] p-6 text-sm shadow-sm leading-relaxed font-medium',
+                'max-w-[85%] rounded-[1.5rem] px-5 py-3 text-[15px] leading-relaxed',
                 m.role === 'user' 
-                  ? 'bg-indigo-600 text-white rounded-tr-none' 
-                  : 'bg-white border text-gray-800 rounded-tl-none',
-                m.urgency === 'emergency_now' && 'border-red-500 border-2 bg-red-50'
+                  ? 'bg-[#F4F4F5] text-black rounded-tr-none' 
+                  : 'bg-white border text-black shadow-sm rounded-tl-none',
+                m.urgency === 'emergency_now' && 'border-red-500 bg-red-50'
               )}>
                 {m.urgency === 'emergency_now' && (
-                  <div className="absolute -top-3 -left-3 bg-red-500 text-white p-1 rounded-full shadow-lg">
-                    <ShieldAlert className="h-4 w-4" />
+                  <div className="flex items-center gap-2 mb-2 text-red-600 font-bold uppercase text-[10px]">
+                    <ShieldAlert className="h-3 w-3" /> Emergency Signal
                   </div>
                 )}
                 {m.content}
               </div>
+              {m.role === 'user' && (
+                <Avatar className="h-9 w-9 border bg-white text-gray-400 shadow-sm shrink-0">
+                  <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                </Avatar>
+              )}
             </div>
           ))}
           {isLoading && (
-            <div className="flex items-start gap-6 animate-pulse">
-              <Avatar className="h-12 w-12 bg-indigo-600 text-white shadow-sm border"><AvatarFallback><Sparkles className="h-5 w-5" /></AvatarFallback></Avatar>
-              <div className="bg-white border p-6 rounded-[2rem] shadow-sm rounded-tl-none">
-                <div className="flex gap-2 items-center">
-                  <div className="h-2 w-2 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <div className="h-2 w-2 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <div className="h-2 w-2 bg-indigo-600 rounded-full animate-bounce" />
+            <div className="flex items-start gap-4 animate-pulse">
+              <Avatar className="h-9 w-9 bg-indigo-600 text-white shadow-sm border shrink-0"><AvatarFallback><Sparkles className="h-4 w-4" /></AvatarFallback></Avatar>
+              <div className="bg-white border p-4 rounded-[1.5rem] shadow-sm rounded-tl-none">
+                <div className="flex gap-1.5 items-center">
+                  <div className="h-1.5 w-1.5 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <div className="h-1.5 w-1.5 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <div className="h-1.5 w-1.5 bg-indigo-600 rounded-full animate-bounce" />
                 </div>
               </div>
             </div>
@@ -201,81 +204,85 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
         </div>
       </ScrollArea>
 
-      <div className="p-10 border-t bg-white/60 backdrop-blur-xl">
-        <div className="flex flex-wrap gap-2 mb-6">
+      {/* Input Section - Dashboard Style */}
+      <div className="w-full max-w-4xl mx-auto px-6 pb-8 pt-4">
+        {/* Suggestion Pills */}
+        <div className="flex flex-wrap gap-2 mb-4 justify-center">
           {suggestions.map((s, i) => (
             <button 
               key={i} 
-              className="bg-white hover:bg-indigo-50 text-[10px] font-black border border-indigo-100 rounded-full px-5 h-10 transition-all uppercase tracking-widest shadow-sm text-indigo-600" 
+              className="bg-white hover:bg-gray-50 text-[11px] font-bold border rounded-full px-4 h-9 transition-all text-gray-700 shadow-sm whitespace-nowrap" 
               onClick={() => submitMessage(s)}
             >
               {s}
             </button>
           ))}
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); submitMessage(input); }} className="relative flex items-center gap-4">
-          <div className="flex-1 relative">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Zera about your recovery..."
-              className="resize-none bg-white pr-16 focus:ring-indigo-500 min-h-[70px] max-h-[180px] py-5 px-8 border-gray-200 shadow-xl rounded-full text-base leading-tight font-medium"
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(input); } }}
-            />
-            <button 
-              type="submit" 
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-indigo-600 text-white hover:bg-indigo-700 h-12 w-12 flex items-center justify-center rounded-full transition-all shadow-lg active:scale-95 disabled:opacity-50" 
-              disabled={isLoading || !input.trim()}
-            >
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CornerDownLeft className="h-5 w-5" />}
-            </button>
-          </div>
+
+        {/* Input Bar */}
+        <form 
+          onSubmit={(e) => { e.preventDefault(); submitMessage(input); }} 
+          className="relative bg-white border shadow-lg rounded-[2rem] overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all"
+        >
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask Zera about your recovery..."
+            className="resize-none bg-transparent border-none pr-16 focus-visible:ring-0 min-h-[56px] py-4 px-6 text-base font-medium"
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(input); } }}
+          />
+          <button 
+            type="submit" 
+            className="absolute right-3 bottom-2 bg-indigo-600 text-white hover:bg-indigo-700 h-10 w-10 flex items-center justify-center rounded-full transition-all shadow-md active:scale-95 disabled:opacity-50" 
+            disabled={isLoading || !input.trim()}
+          >
+            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <SendHorizonal className="h-5 w-5" />}
+          </button>
         </form>
-        <div className="mt-6 flex items-center justify-between px-4">
-           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-             🛡️ Neural Safety Layer Active
-           </div>
-           <Badge variant="outline" className="text-[9px] h-5 px-3 font-bold border-indigo-100 text-indigo-600 bg-indigo-50/50 uppercase rounded-full">🤖 Gemini v2.5</Badge>
-        </div>
+        
+        <p className="text-center text-[10px] text-gray-400 font-medium mt-3">
+          Zera is an AI assistant. Review clinical guidance with your healthcare provider.
+        </p>
       </div>
 
+      {/* Profile Setup Dialog */}
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
         <DialogContent className="max-w-md rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden bg-white">
-          <div className="bg-indigo-600 text-white p-12 text-center relative overflow-hidden">
+          <div className="bg-indigo-600 text-white p-10 text-center relative overflow-hidden">
              <div className="absolute top-0 right-0 p-8 opacity-10"><Sparkles className="h-32 w-32" /></div>
-             <DialogTitle className="text-3xl font-headline font-extrabold mb-3">👤 Health Identity</DialogTitle>
-             <DialogDescription className="text-indigo-100 text-lg">
+             <DialogTitle className="text-2xl font-headline font-black mb-2">👤 Health Identity</DialogTitle>
+             <DialogDescription className="text-indigo-100 text-sm">
                Initialize your local recovery node to begin monitoring.
              </DialogDescription>
           </div>
-          <form onSubmit={handleSaveProfile} className="p-10 space-y-8">
-            <div className="space-y-3">
+          <form onSubmit={handleSaveProfile} className="p-8 space-y-6">
+            <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Full Name</Label>
               <Input 
                 placeholder="E.g., Elena" 
                 value={profileForm.name} 
                 onChange={e => setProfileForm(p => ({...p, name: e.target.value}))}
-                className="h-14 rounded-2xl bg-gray-50 border-gray-200 px-5 text-base font-bold focus:bg-white transition-colors"
+                className="h-12 rounded-xl bg-gray-50 border-gray-200 px-4 font-bold"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Birth Date</Label>
                 <Input 
                   type="date"
                   value={profileForm.dob} 
                   onChange={e => setProfileForm(p => ({...p, dob: e.target.value}))}
-                  className="h-14 rounded-2xl bg-gray-50 border-gray-200 px-5 font-bold"
+                  className="h-12 rounded-xl bg-gray-50 border-gray-200 px-4 font-bold"
                 />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Birth Method</Label>
                 <Select value={profileForm.birthMethod} onValueChange={v => setProfileForm(p => ({...p, birthMethod: v}))}>
-                  <SelectTrigger className="h-14 rounded-2xl bg-gray-50 border-gray-200 px-5 font-bold">
+                  <SelectTrigger className="h-12 rounded-xl bg-gray-50 border-gray-200 px-4 font-bold">
                     <SelectValue placeholder="How?" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-2xl">
+                  <SelectContent className="rounded-xl">
                     <SelectItem value="natural">Naturally</SelectItem>
                     <SelectItem value="c-section">C-Section</SelectItem>
                   </SelectContent>
@@ -283,18 +290,18 @@ export const Chat = forwardRef<ChatHandle, {}>((props, ref) => {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Days since baby born</Label>
               <Input 
                 type="number"
                 placeholder="E.g., 14"
                 value={profileForm.daysSinceBirth} 
                 onChange={e => setProfileForm(p => ({...p, daysSinceBirth: e.target.value}))}
-                className="h-14 rounded-2xl bg-gray-50 border-gray-200 px-5 font-bold"
+                className="h-12 rounded-xl bg-gray-50 border-gray-200 px-4 font-bold"
               />
             </div>
 
-            <Button type="submit" className="w-full h-16 rounded-full font-extrabold text-lg mt-4 bg-indigo-600 shadow-xl shadow-indigo-100 hover:scale-[1.02] transition-transform">
+            <Button type="submit" className="w-full h-14 rounded-full font-bold text-lg mt-2 bg-indigo-600 hover:bg-indigo-700 shadow-lg">
               🚀 Activate Matrix
             </Button>
           </form>
