@@ -3,13 +3,13 @@
 /**
  * @fileOverview Core Chat Engine for Zera AI.
  * This flow implements the "Health Monitoring based on Conversation" technique.
- * It uses the master mainPrompt to analyze text for symptoms, urgency, and sentiment.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { withGroqFallback } from '../groq-fallback';
 import { mainPrompt } from '@/ai/prompts/main.prompt';
+import { sendPushoverNotification } from '@/lib/pushover';
 
 const CoreChatInputSchema = z.object({
   userInput: z.string().describe('The message from the user.'),
@@ -33,8 +33,8 @@ const CoreChatOutputSchema = z.object({
       urgency_flag: z.boolean(),
     }),
     next_question: z.string(),
-  }).describe('Internal routing and clinical metadata (Block A equivalent).'),
-  response: z.string().describe('The user-facing empathetic response (Block B equivalent).'),
+  }).describe('Internal routing and clinical metadata.'),
+  response: z.string().describe('The user-facing empathetic response.'),
 });
 export type CoreChatOutput = z.infer<typeof CoreChatOutputSchema>;
 
@@ -58,7 +58,7 @@ The "route" field must contain all metadata from Block A.
 
 const promptWithFallback = withGroqFallback(
     prompt,
-    mainPrompt, // Use the same prompt for fallback
+    mainPrompt,
     CoreChatOutputSchema,
     'coreChatFlow'
 );
@@ -71,6 +71,15 @@ const coreChatFlow = ai.defineFlow(
   },
   async input => {
     const { output } = await promptWithFallback(input);
+    
+    // Trigger Pushover notification for emergencies
+    if (output?.route?.urgency === 'emergency_now') {
+      await sendPushoverNotification(
+        `Critical postpartum emergency detected: ${output.route.topic}. Response: ${output.response.substring(0, 100)}...`,
+        '🚨 ZERA: EMERGENCY DETECTED'
+      );
+    }
+    
     return output!;
   }
 );

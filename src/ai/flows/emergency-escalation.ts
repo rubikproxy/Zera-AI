@@ -1,17 +1,14 @@
 'use server';
 
 /**
- * @fileOverview Implements the emergency escalation flow for the MomLink app.
- *
- * - emergencyEscalation - A function that determines if a situation is an emergency and escalates it.
- * - EmergencyEscalationInput - The input type for the emergencyEscalation function.
- * - EmergencyEscalationOutput - The return type for the emergencyEscalation function.
+ * @fileOverview Implements the emergency escalation flow with Pushover notification support.
  */
 
 import {ai} from '@/ai/genkit';
 import { emergencyEscalationPrompt } from '@/ai/prompts/emergency-escalation.prompt';
 import {z} from 'genkit';
 import { withGroqFallback } from '../groq-fallback';
+import { sendPushoverNotification } from '@/lib/pushover';
 
 const EmergencyEscalationInputSchema = z.object({
   symptoms: z
@@ -33,7 +30,7 @@ const EmergencyEscalationOutputSchema = z.object({
   escalationMessage: z
     .string()
     .describe(
-      'A message containing instructions for the user, or details about the escalation process. This message will be returned to the front end.'
+      'A message containing instructions for the user, or details about the escalation process.'
     ),
 });
 
@@ -67,6 +64,15 @@ const emergencyEscalationFlow = ai.defineFlow(
   },
   async input => {
     const { output } = await promptWithFallback(input);
+    
+    // Trigger Pushover notification for confirmed emergencies
+    if (output?.isEmergency) {
+      await sendPushoverNotification(
+        `Emergency Escalation Triggered for Patient ${input.patientId}. Symptoms: ${input.symptoms.substring(0, 100)}...`,
+        '🚨 ZERA: SYSTEM ESCALATION'
+      );
+    }
+    
     return output!;
   }
 );
